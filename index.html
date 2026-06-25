@@ -24,6 +24,11 @@
       cursor: pointer;
     }
 
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
     #stimulus {
       width: 100%;
       max-height: 460px;
@@ -53,6 +58,18 @@
       border-color: red;
       color: red;
     }
+
+    .check-row {
+      margin-top: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .check-row input {
+      width: auto;
+      margin-top: 0;
+    }
   </style>
 </head>
 
@@ -77,13 +94,25 @@
     <div id="timer">--</div>
 
     <button id="startTrialButton" onclick="startPreparation()">準備を開始する</button>
-    <button id="nextTrialButton" class="hidden" onclick="nextTrial()">次の試行へ</button>
+    <button id="nextTrialButton" class="hidden" onclick="nextTrial()" disabled>次の試行へ</button>
 
     <div id="downloadArea" class="box hidden">
       <p>録音が完了しました。以下から保存してください。</p>
+
       <audio id="audioPlayback" controls style="width:100%;"></audio>
+
       <br><br>
+
       <a id="downloadLink">録音ファイルをダウンロード</a>
+
+      <div class="check-row">
+        <input type="checkbox" id="downloadConfirmed" onchange="handleDownloadConfirmation()">
+        <label for="downloadConfirmed">録音ファイルを保存しました</label>
+      </div>
+
+      <p style="font-size: 14px;">
+        ※ファイルを保存した後、チェックを入れると次の試行へ進めます。
+      </p>
     </div>
   </div>
 
@@ -92,15 +121,15 @@
     let currentTrial = 1;
     const totalTrials = 6;
 
-    const preparationDuration = 60;
+    const preparationDuration = 5;
 
     const trialDurations = {
-      1: 120,
-      2: 120,
-      3: 90,
-      4: 90,
-      5: 90,
-      6: 90
+      1: 5,
+      2: 5,
+      3: 5,
+      4: 5,
+      5: 5,
+      6: 5
     };
 
     let mediaRecorder;
@@ -142,10 +171,15 @@
          発話時間：${speakingDuration}秒`;
 
       document.getElementById('timer').textContent = preparationDuration;
+
       document.getElementById('startTrialButton').textContent = '準備を開始する';
       document.getElementById('startTrialButton').classList.remove('hidden');
+
       document.getElementById('nextTrialButton').classList.add('hidden');
+      document.getElementById('nextTrialButton').disabled = true;
+
       document.getElementById('downloadArea').classList.add('hidden');
+      document.getElementById('downloadConfirmed').checked = false;
     }
 
     function startPreparation() {
@@ -215,13 +249,19 @@
 
           document.getElementById('downloadArea').classList.remove('hidden');
 
-          showMessage(`Trial ${currentTrial} の録音が完了しました。`, false);
-
           if (currentTrial < totalTrials) {
             document.getElementById('nextTrialButton').classList.remove('hidden');
-          } else {
+            document.getElementById('nextTrialButton').disabled = true;
+
             showMessage(
-              'Output-only Practice が完了しました。全ての録音ファイルを保存してください。',
+              `Trial ${currentTrial} の録音が完了しました。録音ファイルを保存し、確認チェックを入れてください。`,
+              false
+            );
+          } else {
+            document.getElementById('nextTrialButton').classList.add('hidden');
+
+            showMessage(
+              'Trial 6 の録音が完了しました。録音ファイルを保存し、確認チェックを入れてください。',
               false
             );
           }
@@ -260,6 +300,28 @@
           }
         }
       }, 1000);
+    }
+
+    function handleDownloadConfirmation() {
+      const checked = document.getElementById('downloadConfirmed').checked;
+
+      if (!checked) {
+        document.getElementById('nextTrialButton').disabled = true;
+        return;
+      }
+
+      if (currentTrial < totalTrials) {
+        document.getElementById('nextTrialButton').disabled = false;
+        showMessage(
+          `Trial ${currentTrial} の保存確認が完了しました。次の試行へ進んでください。`,
+          false
+        );
+      } else {
+        showMessage(
+          'Output-only Practice が完了しました。全ての録音ファイルが保存されていることを確認してください。',
+          false
+        );
+      }
     }
 
     function nextTrial() {
