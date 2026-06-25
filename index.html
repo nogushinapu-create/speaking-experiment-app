@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Recording Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 760px;
+      margin: 40px auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 12px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    #timer {
+      font-size: 48px;
+      font-weight: bold;
+      text-align: center;
+      margin: 24px 0;
+    }
+
+    .box {
+      margin-top: 20px;
+      padding: 16px;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Recording Test</h1>
+
+  <p>このページでマイク録音ができるか確認します。</p>
+
+  <div id="timer">10</div>
+
+  <button id="startButton">録音開始</button>
+
+  <div class="box">
+    <p id="status">待機中</p>
+    <audio id="audioPlayback" controls style="width:100%; display:none;"></audio>
+    <a id="downloadLink" style="display:none;">録音ファイルをダウンロード</a>
+  </div>
+
+  <script>
+    let mediaRecorder;
+    let audioChunks = [];
+    let countdownInterval;
+    const duration = 10;
+
+    document.getElementById('startButton').addEventListener('click', startRecording);
+
+    async function startRecording() {
+      const startButton = document.getElementById('startButton');
+      const status = document.getElementById('status');
+
+      startButton.disabled = true;
+      status.textContent = 'マイクを起動しています...';
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+        audioChunks = [];
+        mediaRecorder = new MediaRecorder(stream);
+
+        mediaRecorder.ondataavailable = event => {
+          if (event.data.size > 0) {
+            audioChunks.push(event.data);
+          }
+        };
+
+        mediaRecorder.onstop = () => {
+          stream.getTracks().forEach(track => track.stop());
+
+          const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+          const audioUrl = URL.createObjectURL(audioBlob);
+
+          const audioPlayback = document.getElementById('audioPlayback');
+          audioPlayback.src = audioUrl;
+          audioPlayback.style.display = 'block';
+
+          const downloadLink = document.getElementById('downloadLink');
+          downloadLink.href = audioUrl;
+          downloadLink.download = 'recording_test.webm';
+          downloadLink.textContent = '録音ファイルをダウンロード';
+          downloadLink.style.display = 'block';
+
+          status.textContent = '録音が完了しました。再生して確認してください。';
+          startButton.disabled = false;
+          startButton.textContent = 'もう一度録音する';
+        };
+
+        mediaRecorder.start();
+        status.textContent = '録音中...';
+        startCountdown(duration);
+
+      } catch (error) {
+        status.innerHTML =
+          `録音に失敗しました。<br>
+           Error name: ${error.name}<br>
+           Error message: ${error.message}`;
+        startButton.disabled = false;
+      }
+    }
+
+    function startCountdown(seconds) {
+      let remaining = seconds;
+      document.getElementById('timer').textContent = remaining;
+
+      clearInterval(countdownInterval);
+
+      countdownInterval = setInterval(() => {
+        remaining--;
+        document.getElementById('timer').textContent = remaining;
+
+        if (remaining <= 0) {
+          clearInterval(countdownInterval);
+          if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+          }
+        }
+      }, 1000);
+    }
+  </script>
+</body>
+</html>
