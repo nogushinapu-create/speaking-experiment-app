@@ -11,6 +11,7 @@
       padding: 20px;
       line-height: 1.6;
     }
+
     input, button {
       width: 100%;
       padding: 14px;
@@ -18,9 +19,11 @@
       font-size: 16px;
       box-sizing: border-box;
     }
+
     button {
       cursor: pointer;
     }
+
     #stimulus {
       width: 100%;
       max-height: 460px;
@@ -28,20 +31,24 @@
       border: 1px solid #ccc;
       margin-top: 20px;
     }
+
     #timer {
       font-size: 56px;
       font-weight: bold;
       text-align: center;
       margin: 24px 0;
     }
+
     .box {
       margin-top: 20px;
       padding: 16px;
       border: 1px solid #ccc;
     }
+
     .hidden {
       display: none;
     }
+
     .error {
       border-color: red;
       color: red;
@@ -65,12 +72,11 @@
 
     <p id="trialInfo"></p>
 
-    <!-- 後で実際の6コマイラスト画像に差し替える -->
     <img id="stimulus" src="stimulus-output.png" alt="stimulus image">
 
     <div id="timer">--</div>
 
-    <button id="startTrialButton" onclick="startTrial()">この試行を開始する</button>
+    <button id="startTrialButton" onclick="startPreparation()">準備を開始する</button>
     <button id="nextTrialButton" class="hidden" onclick="nextTrial()">次の試行へ</button>
 
     <div id="downloadArea" class="box hidden">
@@ -85,6 +91,8 @@
     let subjectId = '';
     let currentTrial = 1;
     const totalTrials = 6;
+
+    const preparationDuration = 60;
 
     const trialDurations = {
       1: 120,
@@ -126,23 +134,55 @@
     }
 
     function renderTrial() {
-      const duration = trialDurations[currentTrial];
+      const speakingDuration = trialDurations[currentTrial];
 
       document.getElementById('trialInfo').innerHTML =
         `Trial ${currentTrial} / ${totalTrials}<br>
-         発話時間：${duration}秒`;
+         準備時間：${preparationDuration}秒<br>
+         発話時間：${speakingDuration}秒`;
 
-      document.getElementById('timer').textContent = duration;
+      document.getElementById('timer').textContent = preparationDuration;
+      document.getElementById('startTrialButton').textContent = '準備を開始する';
       document.getElementById('startTrialButton').classList.remove('hidden');
       document.getElementById('nextTrialButton').classList.add('hidden');
       document.getElementById('downloadArea').classList.add('hidden');
     }
 
+    function startPreparation() {
+      document.getElementById('startTrialButton').classList.add('hidden');
+
+      showMessage(
+        `Trial ${currentTrial} の準備時間です。画像を見て、話す内容を考えてください。`,
+        false
+      );
+
+      startPreparationCountdown(preparationDuration);
+    }
+
+    function startPreparationCountdown(seconds) {
+      let remaining = seconds;
+      document.getElementById('timer').textContent = remaining;
+
+      clearInterval(countdownInterval);
+
+      countdownInterval = setInterval(() => {
+        remaining--;
+        document.getElementById('timer').textContent = remaining;
+
+        if (remaining <= 0) {
+          clearInterval(countdownInterval);
+          startTrial();
+        }
+      }, 1000);
+    }
+
     async function startTrial() {
       const duration = trialDurations[currentTrial];
 
-      document.getElementById('startTrialButton').classList.add('hidden');
-      showMessage('録音を開始します。', false);
+      showMessage(
+        `Trial ${currentTrial} の発話録音を開始しました。`,
+        false
+      );
 
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -180,12 +220,15 @@
           if (currentTrial < totalTrials) {
             document.getElementById('nextTrialButton').classList.remove('hidden');
           } else {
-            showMessage('Output-only Practice が完了しました。全ての録音ファイルを保存してください。', false);
+            showMessage(
+              'Output-only Practice が完了しました。全ての録音ファイルを保存してください。',
+              false
+            );
           }
         };
 
         mediaRecorder.start();
-        startCountdown(duration);
+        startSpeakingCountdown(duration);
 
       } catch (error) {
         showMessage(
@@ -194,11 +237,12 @@
            Error message: ${error.message}`,
           true
         );
+
         document.getElementById('startTrialButton').classList.remove('hidden');
       }
     }
 
-    function startCountdown(seconds) {
+    function startSpeakingCountdown(seconds) {
       let remaining = seconds;
       document.getElementById('timer').textContent = remaining;
 
@@ -210,6 +254,7 @@
 
         if (remaining <= 0) {
           clearInterval(countdownInterval);
+
           if (mediaRecorder && mediaRecorder.state !== 'inactive') {
             mediaRecorder.stop();
           }
