@@ -120,6 +120,7 @@ button:disabled {
   <div id="outputTimer">--</div>
 
   <button id="outputStartButton" onclick="startOutputPreparation()">準備を開始する</button>
+  <button id="outputSpeakButton" class="hidden" onclick="startOutputSpeaking()">発話を開始する</button>
   <button id="outputNextButton" class="hidden" onclick="nextOutputTrial()" disabled>次の試行へ</button>
 
   <div id="outputDownloadArea" class="box hidden">
@@ -159,6 +160,8 @@ button:disabled {
     <div id="inputTimer">--</div>
 
     <button id="inputStartButton" onclick="startInputPreparation()">準備を開始する</button>
+
+    <button id="inputSpeakButton" class="hidden" onclick="startInputSpeaking()">発話を開始する</button>
 
     <div id="inputDownloadArea" class="box hidden">
       <p>録音が完了しました。以下から保存してください。</p>
@@ -257,6 +260,7 @@ function hideAllPracticeAreas() {
 
   document.getElementById('outputPracticeArea').classList.remove('hidden');
   renderOutputTrial();
+  document.getElementById('outputSpeakButton').classList.add('hidden');
 }
     function showInputOnlyIntro() {
       hideAllPracticeAreas();
@@ -330,10 +334,10 @@ function startOutputPreparationCountdown(seconds) {
     document.getElementById('outputTimer').textContent = remaining;
 
     if (remaining <= 0) {
-      clearInterval(outputCountdownInterval);
-      startOutputSpeaking();
-    }
-  }, 1000);
+  clearInterval(outputCountdownInterval);
+  document.getElementById('outputTimer').textContent = outputSpeakingDurations[outputTrial];
+  document.getElementById('outputSpeakButton').classList.remove('hidden');
+  showMessage(`Trial ${outputTrial} の準備時間が終了しました。「発話を開始する」を押すと録音が始まります。`, false);
 }
 
 async function startOutputSpeaking() {
@@ -518,10 +522,10 @@ function startInputPreparationCountdown(seconds) {
     document.getElementById('inputTimer').textContent = remaining;
 
     if (remaining <= 0) {
-      clearInterval(inputCountdownInterval);
-      startInputSpeaking();
-    }
-  }, 1000);
+  clearInterval(inputCountdownInterval);
+  document.getElementById('inputTimer').textContent = inputSpeakingDuration;
+  document.getElementById('inputSpeakButton').classList.remove('hidden');
+  showMessage('準備時間が終了しました。「発話を開始する」を押すと録音が始まります。', false);
 }
 
 async function startInputSpeaking() {
