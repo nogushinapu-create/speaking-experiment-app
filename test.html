@@ -200,11 +200,14 @@
       document.getElementById('testTitle').textContent = title;
 
       document.getElementById('testInfo').innerHTML =
-        `SubjectID：${participant.SubjectID}<br>
-         Phase：${title}<br>
-         Task：${taskName}<br>
-         準備時間：${preparationDuration}秒<br>
-         発話時間：${speakingDuration}秒`;
+  `SubjectID：${participant.SubjectID}<br>
+   Phase：${title}<br>
+   Task：${taskName}<br>
+   準備時間：${preparationDuration}秒<br>
+   発話時間：${speakingDuration}秒<br><br>
+   これからイラストを見て、話す内容を準備します。<br>
+   準備時間が終わると「発話を開始する」ボタンが表示されます。<br>
+   ボタンを押すと録音が始まります。`;
 
       document.getElementById('stimulus').src = imageFile;
       document.getElementById('timer').textContent = preparationDuration;
@@ -218,8 +221,10 @@
     function startPreparation() {
       document.getElementById('prepareButton').classList.add('hidden');
 
-      showMessage('準備時間です。画像を見て、話す内容を考えてください。', false);
-
+      showMessage(
+  '準備時間です。イラストを見て、英語で話す内容を考えてください。',
+  false
+);
       startPreparationCountdown(preparationDuration);
     }
 
