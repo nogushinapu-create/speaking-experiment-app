@@ -248,61 +248,64 @@
     }
 
     async function startSpeaking() {
-      document.getElementById('speakButton').classList.add('hidden');
+  document.getElementById('speakButton').classList.add('hidden');
 
-      showMessage('発話録音を開始しました。', false);
+  showMessage('発話録音を開始しました。', false);
 
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-        audioChunks = [];
-        mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
+    mediaRecorder = new MediaRecorder(stream);
 
-        mediaRecorder.ondataavailable = event => {
-          if (event.data.size > 0) {
-            audioChunks.push(event.data);
-          }
-        };
-
-        mediaRecorder.onstop = async () => {
-          stream.getTracks().forEach(track => track.stop());
-
-          const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-          const audioUrl = URL.createObjectURL(audioBlob);
-
-          const fileName =
-            `${participant.SubjectID}_${phase}_test_${speakingDuration}s.webm`;
-
-          document.getElementById('audioPlayback').src = audioUrl;
-          const uploadOk = await uploadAudioToDrive(audioBlob, {
-  phase: phase,
-  trial: 'test',
-  duration: speakingDuration,
-  fileName: fileName
-});
-
-          const downloadLink = document.getElementById('downloadLink');
-          downloadLink.href = audioUrl;
-          downloadLink.download = fileName;
-          downloadLink.textContent = `${fileName} をダウンロード`;
-
-          document.getElementById('downloadArea').classList.remove('hidden');
-
-          showUploadResultMessage(uploadOk, phase);
-        mediaRecorder.start();
-        startSpeakingCountdown(speakingDuration);
-
-      } catch (error) {
-        showMessage(
-          `録音に失敗しました。<br>
-           Error name: ${error.name}<br>
-           Error message: ${error.message}`,
-          true
-        );
-
-        document.getElementById('speakButton').classList.remove('hidden');
+    mediaRecorder.ondataavailable = event => {
+      if (event.data.size > 0) {
+        audioChunks.push(event.data);
       }
-    }
+    };
+
+    mediaRecorder.onstop = async () => {
+      stream.getTracks().forEach(track => track.stop());
+
+      const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+      const audioUrl = URL.createObjectURL(audioBlob);
+
+      const fileName =
+        `${participant.SubjectID}_${phase}_test_${speakingDuration}s.webm`;
+
+      document.getElementById('audioPlayback').src = audioUrl;
+
+      const uploadOk = await uploadAudioToDrive(audioBlob, {
+        phase: phase,
+        trial: 'test',
+        duration: speakingDuration,
+        fileName: fileName
+      });
+
+      const downloadLink = document.getElementById('downloadLink');
+      downloadLink.href = audioUrl;
+      downloadLink.download = fileName;
+      downloadLink.textContent = `${fileName} をダウンロード`;
+
+      document.getElementById('downloadArea').classList.remove('hidden');
+
+      showUploadResultMessage(uploadOk, phase);
+    };
+
+    mediaRecorder.start();
+    startSpeakingCountdown(speakingDuration);
+
+  } catch (error) {
+    showMessage(
+      `録音に失敗しました。<br>
+       Error name: ${error.name}<br>
+       Error message: ${error.message}`,
+      true
+    );
+
+    document.getElementById('speakButton').classList.remove('hidden');
+  }
+}
 
     function startSpeakingCountdown(seconds) {
       let remaining = seconds;
