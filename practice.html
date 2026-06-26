@@ -38,6 +38,38 @@
     .hidden {
       display: none;
     }
+    #outputStimulus {
+  width: 100%;
+  max-height: 460px;
+  object-fit: contain;
+  border: 1px solid #ccc;
+  margin-top: 20px;
+}
+
+#outputTimer {
+  font-size: 56px;
+  font-weight: bold;
+  text-align: center;
+  margin: 24px 0;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.check-row {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.check-row input {
+  width: auto;
+  margin-top: 0;
+}
+    
   </style>
 </head>
 
@@ -62,6 +94,38 @@
     <h2 id="conditionTitle"></h2>
     <p id="conditionDescription"></p>
   </div>
+
+  <div id="outputPracticeArea" class="box hidden">
+  <h2>Output-only Practice</h2>
+
+  <p id="outputTrialInfo"></p>
+
+  <img id="outputStimulus" src="stimulus-output.png" alt="stimulus image">
+
+  <div id="outputTimer">--</div>
+
+  <button id="outputStartButton" onclick="startOutputPreparation()">準備を開始する</button>
+  <button id="outputNextButton" class="hidden" onclick="nextOutputTrial()" disabled>次の試行へ</button>
+
+  <div id="outputDownloadArea" class="box hidden">
+    <p>録音が完了しました。以下から保存してください。</p>
+
+    <audio id="outputAudioPlayback" controls style="width:100%;"></audio>
+
+    <br><br>
+
+    <a id="outputDownloadLink">録音ファイルをダウンロード</a>
+
+    <div class="check-row">
+      <input type="checkbox" id="outputDownloadConfirmed" onchange="handleOutputDownloadConfirmation()">
+      <label for="outputDownloadConfirmed">録音ファイルを保存しました</label>
+    </div>
+
+    <p style="font-size: 14px;">
+      ※ファイルを保存した後、チェックを入れると次の試行へ進めます。
+    </p>
+  </div>
+</div>
 
   <script>
     const API_URL = 'https://script.google.com/macros/s/AKfycbxrlaa8aKg1nTfCVUquFtGszDyyF6TM53oel1w5MXVf3kIl5akfP9JyUA1qKmfv26gK/exec';
@@ -130,12 +194,14 @@
     }
 
     function showOutputOnlyIntro() {
-      document.getElementById('conditionTitle').textContent = 'Output-only Practice';
-      document.getElementById('conditionDescription').innerHTML =
-        `この条件では、イラストを見て、準備時間の後に英語で話します。<br><br>
-         次の段階で、既に作成したOutput-only録音エンジンをここに組み込みます。`;
-    }
+  document.getElementById('conditionTitle').textContent = 'Output-only Practice';
+  document.getElementById('conditionDescription').innerHTML =
+    `この条件では、イラストを見て、準備時間の後に英語で話します。<br><br>
+     準備ができたら、下のボタンからTrial 1を開始してください。`;
 
+  document.getElementById('outputPracticeArea').classList.remove('hidden');
+  renderOutputTrial();
+}
     function showInputOnlyIntro() {
       document.getElementById('conditionTitle').textContent = 'Input-only Practice';
       document.getElementById('conditionDescription').innerHTML =
@@ -150,6 +216,183 @@
          次の段階で、発話録音と音声再生を組み合わせます。`;
     }
 
+    let outputTrial = 1;
+const outputTotalTrials = 6;
+const outputPreparationDuration = 60;
+
+const outputSpeakingDurations = {
+  1: 120,
+  2: 120,
+  3: 90,
+  4: 90,
+  5: 90,
+  6: 90
+};
+
+let outputMediaRecorder;
+let outputAudioChunks = [];
+let outputCountdownInterval;
+
+function renderOutputTrial() {
+  const speakingDuration = outputSpeakingDurations[outputTrial];
+
+  document.getElementById('outputTrialInfo').innerHTML =
+    `Trial ${outputTrial} / ${outputTotalTrials}<br>
+     準備時間：${outputPreparationDuration}秒<br>
+     発話時間：${speakingDuration}秒`;
+
+  document.getElementById('outputTimer').textContent = outputPreparationDuration;
+  document.getElementById('outputStartButton').classList.remove('hidden');
+  document.getElementById('outputNextButton').classList.add('hidden');
+  document.getElementById('outputNextButton').disabled = true;
+  document.getElementById('outputDownloadArea').classList.add('hidden');
+  document.getElementById('outputDownloadConfirmed').checked = false;
+}
+
+function startOutputPreparation() {
+  document.getElementById('outputStartButton').classList.add('hidden');
+
+  showMessage(
+    `Trial ${outputTrial} の準備時間です。画像を見て、話す内容を考えてください。`,
+    false
+  );
+
+  startOutputPreparationCountdown(outputPreparationDuration);
+}
+
+function startOutputPreparationCountdown(seconds) {
+  let remaining = seconds;
+  document.getElementById('outputTimer').textContent = remaining;
+
+  clearInterval(outputCountdownInterval);
+
+  outputCountdownInterval = setInterval(() => {
+    remaining--;
+    document.getElementById('outputTimer').textContent = remaining;
+
+    if (remaining <= 0) {
+      clearInterval(outputCountdownInterval);
+      startOutputSpeaking();
+    }
+  }, 1000);
+}
+
+async function startOutputSpeaking() {
+  const duration = outputSpeakingDurations[outputTrial];
+
+  showMessage(`Trial ${outputTrial} の発話録音を開始しました。`, false);
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+    outputAudioChunks = [];
+    outputMediaRecorder = new MediaRecorder(stream);
+
+    outputMediaRecorder.ondataavailable = event => {
+      if (event.data.size > 0) {
+        outputAudioChunks.push(event.data);
+      }
+    };
+
+    outputMediaRecorder.onstop = () => {
+      stream.getTracks().forEach(track => track.stop());
+
+      const audioBlob = new Blob(outputAudioChunks, { type: 'audio/webm' });
+      const audioUrl = URL.createObjectURL(audioBlob);
+
+      const fileName =
+        `${participant.SubjectID}_practice_output_trial${outputTrial}_${duration}s.webm`;
+
+      document.getElementById('outputAudioPlayback').src = audioUrl;
+
+      const downloadLink = document.getElementById('outputDownloadLink');
+      downloadLink.href = audioUrl;
+      downloadLink.download = fileName;
+      downloadLink.textContent = `${fileName} をダウンロード`;
+
+      document.getElementById('outputDownloadArea').classList.remove('hidden');
+
+      if (outputTrial < outputTotalTrials) {
+        document.getElementById('outputNextButton').classList.remove('hidden');
+        document.getElementById('outputNextButton').disabled = true;
+
+        showMessage(
+          `Trial ${outputTrial} の録音が完了しました。録音ファイルを保存し、確認チェックを入れてください。`,
+          false
+        );
+      } else {
+        document.getElementById('outputNextButton').classList.add('hidden');
+
+        showMessage(
+          'Trial 6 の録音が完了しました。録音ファイルを保存し、確認チェックを入れてください。',
+          false
+        );
+      }
+    };
+
+    outputMediaRecorder.start();
+    startOutputSpeakingCountdown(duration);
+
+  } catch (error) {
+    showMessage(
+      `録音に失敗しました。<br>
+       Error name: ${error.name}<br>
+       Error message: ${error.message}`,
+      true
+    );
+
+    document.getElementById('outputStartButton').classList.remove('hidden');
+  }
+}
+
+function startOutputSpeakingCountdown(seconds) {
+  let remaining = seconds;
+  document.getElementById('outputTimer').textContent = remaining;
+
+  clearInterval(outputCountdownInterval);
+
+  outputCountdownInterval = setInterval(() => {
+    remaining--;
+    document.getElementById('outputTimer').textContent = remaining;
+
+    if (remaining <= 0) {
+      clearInterval(outputCountdownInterval);
+
+      if (outputMediaRecorder && outputMediaRecorder.state !== 'inactive') {
+        outputMediaRecorder.stop();
+      }
+    }
+  }, 1000);
+}
+
+function handleOutputDownloadConfirmation() {
+  const checked = document.getElementById('outputDownloadConfirmed').checked;
+
+  if (!checked) {
+    document.getElementById('outputNextButton').disabled = true;
+    return;
+  }
+
+  if (outputTrial < outputTotalTrials) {
+    document.getElementById('outputNextButton').disabled = false;
+
+    showMessage(
+      `Trial ${outputTrial} の保存確認が完了しました。次の試行へ進んでください。`,
+      false
+    );
+  } else {
+    showMessage(
+      'Output-only Practice が完了しました。全ての録音ファイルが保存されていることを確認してください。',
+      false
+    );
+  }
+}
+
+function nextOutputTrial() {
+  outputTrial++;
+  renderOutputTrial();
+}
+    
     function showMessage(message, isError) {
       const box = document.getElementById('message');
       box.style.display = 'block';
