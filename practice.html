@@ -617,7 +617,7 @@ async function startInputSpeaking() {
 
       document.getElementById('inputAudioPlayback').src = audioUrl;
 
-      await uploadAudioToDrive(audioBlob, {
+      const uploadOk = await uploadAudioToDrive(audioBlob, {
   phase: 'practice_input',
   trial: 'final',
   duration: duration,
@@ -631,10 +631,7 @@ async function startInputSpeaking() {
 
       document.getElementById('inputDownloadArea').classList.remove('hidden');
 
-      showMessage(
-        '録音が完了しました。録音ファイルを保存し、確認チェックを入れてください。',
-        false
-      );
+      showUploadResultMessage(uploadOk, 'Input-only final recording');
     };
 
     inputMediaRecorder.start();
@@ -792,7 +789,7 @@ async function startIOSpeaking() {
 
       document.getElementById('ioAudioPlayback').src = audioUrl;
 
-      await uploadAudioToDrive(audioBlob, {
+      const uploadOk = await uploadAudioToDrive(audioBlob, {
   phase: 'practice_inputoutput',
   trial: ioTrial,
   duration: duration,
@@ -806,10 +803,7 @@ async function startIOSpeaking() {
 
       document.getElementById('ioDownloadArea').classList.remove('hidden');
 
-      showMessage(
-        `Trial ${ioTrial} の録音が完了しました。録音ファイルを保存し、確認チェックを入れてください。`,
-        false
-      );
+      showUploadResultMessage(uploadOk, `Trial ${ioTrial}`);
     };
 
     ioMediaRecorder.start();
@@ -960,6 +954,23 @@ function blobToBase64(blob) {
 
     reader.readAsDataURL(blob);
   });
+}
+
+    function showUploadResultMessage(uploadOk, label) {
+  if (uploadOk) {
+    showMessage(
+      `${label} の録音が完了しました。<br>
+       Google Driveへのアップロード処理を送信しました。<br>
+       念のため、下のリンクから手元にも保存し、確認チェックを入れてください。`,
+      false
+    );
+  } else {
+    showMessage(
+      `${label} の録音は完了しましたが、Google Driveへのアップロード送信に失敗しました。<br>
+       必ず下のリンクから録音ファイルを手元に保存し、研究者に連絡してください。`,
+      true
+    );
+  }
 }
     
     function showMessage(message, isError) {
