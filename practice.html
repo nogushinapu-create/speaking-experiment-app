@@ -1,1 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Practice Experiment</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 820px;
+      margin: 40px auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
 
+    input, button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 12px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .box {
+      margin-top: 20px;
+      padding: 16px;
+      border: 1px solid #ccc;
+    }
+
+    .error {
+      border-color: red;
+      color: red;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Practice Experiment</h1>
+
+  <div id="loginArea">
+    <p>SubjectIDを入力してください。</p>
+    <input type="text" id="subjectId" placeholder="例：1001 / 2001 / 3001">
+    <button onclick="loadParticipant()">開始</button>
+  </div>
+
+  <div id="message" class="box hidden"></div>
+
+  <div id="participantArea" class="box hidden">
+    <h2>Participant Information</h2>
+    <p id="participantInfo"></p>
+    <button onclick="startPractice()">Practiceを開始する</button>
+  </div>
+
+  <div id="conditionArea" class="box hidden">
+    <h2 id="conditionTitle"></h2>
+    <p id="conditionDescription"></p>
+  </div>
+
+  <script>
+    const API_URL = 'https://script.google.com/macros/s/AKfycbxrlaa8aKg1nTfCVUquFtGszDyyF6TM53oel1w5MXVf3kIl5akfP9JyUA1qKmfv26gK/exec';
+
+    let participant = null;
+
+    async function loadParticipant() {
+      const subjectId = document.getElementById('subjectId').value.trim();
+
+      if (!subjectId) {
+        showMessage('SubjectIDを入力してください。', true);
+        return;
+      }
+
+      showMessage('参加者情報を取得しています...', false);
+
+      try {
+        const url =
+          `${API_URL}?action=getParticipant&subjectId=${encodeURIComponent(subjectId)}`;
+
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.error) {
+          showMessage(`Error: ${data.error}`, true);
+          return;
+        }
+
+        participant = data;
+
+        document.getElementById('loginArea').classList.add('hidden');
+        document.getElementById('message').classList.add('hidden');
+        document.getElementById('participantArea').classList.remove('hidden');
+
+        document.getElementById('participantInfo').innerHTML =
+          `SubjectID: ${participant.SubjectID}<br>
+           Condition: ${participant.Condition}<br>
+           PreTask: ${participant.PreTask}<br>
+           PostTask: ${participant.PostTask}<br>
+           PracticeStatus: ${participant.PracticeStatus || ''}`;
+
+      } catch (error) {
+        showMessage(
+          `参加者情報の取得に失敗しました。<br>
+           Error: ${error.message}`,
+          true
+        );
+      }
+    }
+
+    function startPractice() {
+      document.getElementById('participantArea').classList.add('hidden');
+      document.getElementById('conditionArea').classList.remove('hidden');
+
+      const condition = participant.Condition;
+
+      if (condition === 'Output_only') {
+        showOutputOnlyIntro();
+      } else if (condition === 'Input_only') {
+        showInputOnlyIntro();
+      } else if (condition === 'Input+output') {
+        showInputOutputIntro();
+      } else {
+        showMessage(`未定義のConditionです: ${condition}`, true);
+      }
+    }
+
+    function showOutputOnlyIntro() {
+      document.getElementById('conditionTitle').textContent = 'Output-only Practice';
+      document.getElementById('conditionDescription').innerHTML =
+        `この条件では、イラストを見て、準備時間の後に英語で話します。<br><br>
+         次の段階で、既に作成したOutput-only録音エンジンをここに組み込みます。`;
+    }
+
+    function showInputOnlyIntro() {
+      document.getElementById('conditionTitle').textContent = 'Input-only Practice';
+      document.getElementById('conditionDescription').innerHTML =
+        `この条件では、モデル音声を複数回聞いた後、準備時間を取り、最後に英語で話します。<br><br>
+         次の段階で、音声再生機能を実装します。`;
+    }
+
+    function showInputOutputIntro() {
+      document.getElementById('conditionTitle').textContent = 'Input+output Practice';
+      document.getElementById('conditionDescription').innerHTML =
+        `この条件では、準備、発話、モデル音声の聴取を組み合わせて練習します。<br><br>
+         次の段階で、発話録音と音声再生を組み合わせます。`;
+    }
+
+    function showMessage(message, isError) {
+      const box = document.getElementById('message');
+      box.style.display = 'block';
+      box.className = isError ? 'box error' : 'box';
+      box.innerHTML = message;
+    }
+  </script>
+</body>
+</html>
