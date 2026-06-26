@@ -1,1 +1,334 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Speaking Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 820px;
+      margin: 40px auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
 
+    input, button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 12px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
+    .box {
+      margin-top: 20px;
+      padding: 16px;
+      border: 1px solid #ccc;
+    }
+
+    .error {
+      border-color: red;
+      color: red;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    #stimulus {
+      width: 100%;
+      max-height: 460px;
+      object-fit: contain;
+      border: 1px solid #ccc;
+      margin-top: 20px;
+    }
+
+    #timer {
+      font-size: 56px;
+      font-weight: bold;
+      text-align: center;
+      margin: 24px 0;
+    }
+
+    .check-row {
+      margin-top: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .check-row input {
+      width: auto;
+      margin-top: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Speaking Test</h1>
+
+  <div id="loginArea">
+    <p>SubjectIDを入力してください。</p>
+    <input type="text" id="subjectId" placeholder="例：1001">
+    <button onclick="loadParticipant()">開始</button>
+  </div>
+
+  <div id="message" class="box hidden"></div>
+
+  <div id="testArea" class="box hidden">
+    <h2 id="testTitle"></h2>
+
+    <p id="testInfo"></p>
+
+    <img id="stimulus" src="" alt="stimulus image">
+
+    <div id="timer">--</div>
+
+    <button id="prepareButton" onclick="startPreparation()">準備を開始する</button>
+    <button id="speakButton" class="hidden" onclick="startSpeaking()">発話を開始する</button>
+
+    <div id="downloadArea" class="box hidden">
+      <p>録音が完了しました。以下から保存してください。</p>
+
+      <audio id="audioPlayback" controls style="width:100%;"></audio>
+
+      <br><br>
+
+      <a id="downloadLink">録音ファイルをダウンロード</a>
+
+      <div class="check-row">
+        <input type="checkbox" id="downloadConfirmed" onchange="handleDownloadConfirmation()">
+        <label for="downloadConfirmed">録音ファイルを保存しました</label>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = 'https://script.google.com/macros/s/AKfycbxrlaa8aKg1nTfCVUquFtGszDyyF6TM53oel1w5MXVf3kIl5akfP9JyUA1qKmfv26gK/exec';
+
+    let participant = null;
+    let phase = '';
+    let preparationDuration = 120;
+    const speakingDuration = 120;
+
+    let mediaRecorder;
+    let audioChunks = [];
+    let countdownInterval;
+
+    function getPhaseFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('phase') || '';
+    }
+
+    async function loadParticipant() {
+      const subjectId = document.getElementById('subjectId').value.trim();
+
+      if (!subjectId) {
+        showMessage('SubjectIDを入力してください。', true);
+        return;
+      }
+
+      phase = getPhaseFromUrl();
+
+      if (!['pre', 'post', 'delayed'].includes(phase)) {
+        showMessage('URLに phase が指定されていません。例：test.html?phase=pre', true);
+        return;
+      }
+
+      showMessage('参加者情報を取得しています...', false);
+
+      try {
+        const url =
+          `${API_URL}?action=getParticipant&subjectId=${encodeURIComponent(subjectId)}`;
+
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.error) {
+          showMessage(`Error: ${data.error}`, true);
+          return;
+        }
+
+        participant = data;
+
+        setupTest();
+
+      } catch (error) {
+        showMessage(
+          `参加者情報の取得に失敗しました。<br>
+           Error: ${error.message}`,
+          true
+        );
+      }
+    }
+
+    function setupTest() {
+      let taskName = '';
+      let imageFile = '';
+      let title = '';
+
+      if (phase === 'pre') {
+        taskName = participant.PreTask;
+        imageFile = `${taskName}.png`;
+        title = 'Pre-test';
+        preparationDuration = 120;
+      } else if (phase === 'post') {
+        taskName = participant.PostTask;
+        imageFile = `${taskName}.png`;
+        title = 'Post-test';
+        preparationDuration = 120;
+      } else if (phase === 'delayed') {
+        taskName = 'delayed';
+        imageFile = 'stimulus-output.png';
+        title = 'Delayed post-test';
+        preparationDuration = 60;
+      }
+
+      document.getElementById('loginArea').classList.add('hidden');
+      document.getElementById('message').classList.add('hidden');
+      document.getElementById('testArea').classList.remove('hidden');
+
+      document.getElementById('testTitle').textContent = title;
+
+      document.getElementById('testInfo').innerHTML =
+        `SubjectID：${participant.SubjectID}<br>
+         Phase：${title}<br>
+         Task：${taskName}<br>
+         準備時間：${preparationDuration}秒<br>
+         発話時間：${speakingDuration}秒`;
+
+      document.getElementById('stimulus').src = imageFile;
+      document.getElementById('timer').textContent = preparationDuration;
+
+      document.getElementById('prepareButton').classList.remove('hidden');
+      document.getElementById('speakButton').classList.add('hidden');
+      document.getElementById('downloadArea').classList.add('hidden');
+      document.getElementById('downloadConfirmed').checked = false;
+    }
+
+    function startPreparation() {
+      document.getElementById('prepareButton').classList.add('hidden');
+
+      showMessage('準備時間です。画像を見て、話す内容を考えてください。', false);
+
+      startPreparationCountdown(preparationDuration);
+    }
+
+    function startPreparationCountdown(seconds) {
+      let remaining = seconds;
+      document.getElementById('timer').textContent = remaining;
+
+      clearInterval(countdownInterval);
+
+      countdownInterval = setInterval(() => {
+        remaining--;
+        document.getElementById('timer').textContent = remaining;
+
+        if (remaining <= 0) {
+          clearInterval(countdownInterval);
+          document.getElementById('timer').textContent = speakingDuration;
+          document.getElementById('speakButton').classList.remove('hidden');
+          showMessage('準備時間が終了しました。「発話を開始する」を押すと録音が始まります。', false);
+        }
+      }, 1000);
+    }
+
+    async function startSpeaking() {
+      document.getElementById('speakButton').classList.add('hidden');
+
+      showMessage('発話録音を開始しました。', false);
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+        audioChunks = [];
+        mediaRecorder = new MediaRecorder(stream);
+
+        mediaRecorder.ondataavailable = event => {
+          if (event.data.size > 0) {
+            audioChunks.push(event.data);
+          }
+        };
+
+        mediaRecorder.onstop = () => {
+          stream.getTracks().forEach(track => track.stop());
+
+          const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+          const audioUrl = URL.createObjectURL(audioBlob);
+
+          const fileName =
+            `${participant.SubjectID}_${phase}_test_${speakingDuration}s.webm`;
+
+          document.getElementById('audioPlayback').src = audioUrl;
+
+          const downloadLink = document.getElementById('downloadLink');
+          downloadLink.href = audioUrl;
+          downloadLink.download = fileName;
+          downloadLink.textContent = `${fileName} をダウンロード`;
+
+          document.getElementById('downloadArea').classList.remove('hidden');
+
+          showMessage('録音が完了しました。録音ファイルを保存し、確認チェックを入れてください。', false);
+        };
+
+        mediaRecorder.start();
+        startSpeakingCountdown(speakingDuration);
+
+      } catch (error) {
+        showMessage(
+          `録音に失敗しました。<br>
+           Error name: ${error.name}<br>
+           Error message: ${error.message}`,
+          true
+        );
+
+        document.getElementById('speakButton').classList.remove('hidden');
+      }
+    }
+
+    function startSpeakingCountdown(seconds) {
+      let remaining = seconds;
+      document.getElementById('timer').textContent = remaining;
+
+      clearInterval(countdownInterval);
+
+      countdownInterval = setInterval(() => {
+        remaining--;
+        document.getElementById('timer').textContent = remaining;
+
+        if (remaining <= 0) {
+          clearInterval(countdownInterval);
+
+          if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+          }
+        }
+      }, 1000);
+    }
+
+    function handleDownloadConfirmation() {
+      const checked = document.getElementById('downloadConfirmed').checked;
+
+      if (checked) {
+        showMessage('テストが完了しました。録音ファイルが保存されていることを確認してください。', false);
+      }
+    }
+
+    function showMessage(message, isError) {
+      const box = document.getElementById('message');
+      box.style.display = 'block';
+      box.className = isError ? 'box error' : 'box';
+      box.innerHTML = message;
+    }
+  </script>
+</body>
+</html>
