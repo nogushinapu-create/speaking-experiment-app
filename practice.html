@@ -928,7 +928,7 @@ async function uploadAudioToDrive(audioBlob, metadata) {
     const payload = {
       action: 'uploadAudio',
       subjectId: participant.SubjectID,
-      condition: participant.Condition,
+      condition: participant.Condition || '',
       phase: metadata.phase,
       trial: metadata.trial,
       duration: metadata.duration,
@@ -938,29 +938,18 @@ async function uploadAudioToDrive(audioBlob, metadata) {
     };
 
     await fetch(API_URL, {
-  method: 'POST',
-  mode: 'no-cors',
-  headers: {
-    'Content-Type': 'text/plain'
-  },
-  body: JSON.stringify(payload)
-});
-    showMessage(
-      `Google Driveへのアップロード処理を送信しました。<br>
-       念のため、下のリンクから手元にも保存してください。`,
-      false
-    );
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {
+        'Content-Type': 'text/plain'
+      },
+      body: JSON.stringify(payload)
+    });
 
     return true;
 
   } catch (error) {
-    showMessage(
-      `Google Driveへのアップロード中にエラーが発生しました。<br>
-       念のため、下のリンクから録音ファイルを手動保存してください。<br>
-       Error: ${error.message}`,
-      true
-    );
-
+    console.error('Upload failed:', error);
     return false;
   }
 }
