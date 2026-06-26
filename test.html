@@ -264,7 +264,7 @@
           }
         };
 
-        mediaRecorder.onstop = () => {
+        mediaRecorder.onstop = async () => {
           stream.getTracks().forEach(track => track.stop());
 
           const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
@@ -274,6 +274,12 @@
             `${participant.SubjectID}_${phase}_test_${speakingDuration}s.webm`;
 
           document.getElementById('audioPlayback').src = audioUrl;
+          await uploadAudioToDrive(audioBlob, {
+  phase: phase,
+  trial: 'test',
+  duration: speakingDuration,
+  fileName: fileName
+});
 
           const downloadLink = document.getElementById('downloadLink');
           downloadLink.href = audioUrl;
@@ -321,13 +327,100 @@
     }
 
     function handleDownloadConfirmation() {
-      const checked = document.getElementById('downloadConfirmed').checked;
+  const checked = document.getElementById('downloadConfirmed').checked;
 
-      if (checked) {
-        showMessage('テストが完了しました。録音ファイルが保存されていることを確認してください。', false);
-      }
+  if (checked) {
+    let statusType = '';
+
+    if (phase === 'pre') {
+      statusType = 'PreStatus';
+    } else if (phase === 'post') {
+      statusType = 'PostStatus';
+    } else if (phase === 'delayed') {
+      statusType = 'DelayedStatus';
     }
 
+    updateParticipantStatus(statusType);
+
+    showMessage('テストが完了しました。録音ファイルが保存されていることを確認してください。', false);
+  }
+}
+async function uploadAudioToDrive(audioBlob, metadata) {
+  try {
+    showMessage('録音ファイルをGoogle Driveへアップロードしています...', false);
+
+    const base64Audio = await blobToBase64(audioBlob);
+
+    const payload = {
+      action: 'uploadAudio',
+      subjectId: participant.SubjectID,
+      condition: participant.Condition || '',
+      phase: metadata.phase,
+      trial: metadata.trial,
+      duration: metadata.duration,
+      fileName: metadata.fileName,
+      mimeType: audioBlob.type || 'audio/webm',
+      base64Audio: base64Audio
+    };
+
+    await fetch(API_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {
+        'Content-Type': 'text/plain'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    showMessage(
+      `Google Driveへのアップロード処理を送信しました。<br>
+       念のため、下のリンクから手元にも保存してください。`,
+      false
+    );
+
+    return true;
+
+  } catch (error) {
+    showMessage(
+      `Google Driveへのアップロード中にエラーが発生しました。<br>
+       念のため、下のリンクから録音ファイルを手動保存してください。<br>
+       Error: ${error.message}`,
+      true
+    );
+
+    return false;
+  }
+}
+
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onloadend = () => {
+      const base64 = reader.result.split(',')[1];
+      resolve(base64);
+    };
+
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+    async function updateParticipantStatus(statusType) {
+  try {
+    const url =
+      `${API_URL}?action=updateStatus&subjectId=${encodeURIComponent(participant.SubjectID)}&statusType=${encodeURIComponent(statusType)}&value=DONE`;
+
+    const response = await fetch(url);
+    const result = await response.json();
+
+    console.log(result);
+
+  } catch (error) {
+    console.error(error);
+  }
+}
+    
     function showMessage(message, isError) {
       const box = document.getElementById('message');
       box.style.display = 'block';
