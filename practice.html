@@ -500,6 +500,8 @@ function handleOutputDownloadConfirmation() {
       false
     );
   } else {
+    updateParticipantStatus('PracticeStatus');
+    
     showMessage(
       'Output-only Practice が完了しました。全ての録音ファイルが保存されていることを確認してください。',
       false
@@ -666,6 +668,7 @@ function handleInputDownloadConfirmation() {
   const checked = document.getElementById('inputDownloadConfirmed').checked;
 
   if (checked) {
+    updateParticipantStatus('PracticeStatus');
     showMessage(
       'Input-only Practice が完了しました。録音ファイルが保存されていることを確認してください。',
       false
@@ -840,6 +843,7 @@ function handleIODownloadConfirmation() {
   if (ioTrial <= 5) {
     showIOModelAudio();
   } else {
+    updateParticipantStatus('PracticeStatus');
     showMessage(
       'Input+output Practice が完了しました。全ての録音ファイルが保存されていることを確認してください。',
       false
@@ -877,6 +881,21 @@ function finishIOAudio() {
 function nextIOTrial() {
   ioTrial++;
   renderIOTrial();
+}
+
+async function updateParticipantStatus(statusType) {
+  try {
+    const url =
+      `${API_URL}?action=updateStatus&subjectId=${encodeURIComponent(participant.SubjectID)}&statusType=${encodeURIComponent(statusType)}&value=DONE`;
+
+    const response = await fetch(url);
+    const result = await response.json();
+
+    console.log(result);
+
+  } catch (error) {
+    console.error(error);
+  }
 }
     
     function showMessage(message, isError) {
