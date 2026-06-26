@@ -424,7 +424,7 @@ async function startOutputSpeaking() {
 
       document.getElementById('outputAudioPlayback').src = audioUrl;
 
-      await uploadAudioToDrive(audioBlob, {
+      const uploadOk = await uploadAudioToDrive(audioBlob, {
   phase: 'practice_output',
   trial: outputTrial,
   duration: duration,
@@ -442,17 +442,11 @@ async function startOutputSpeaking() {
         document.getElementById('outputNextButton').classList.remove('hidden');
         document.getElementById('outputNextButton').disabled = true;
 
-        showMessage(
-          `Trial ${outputTrial} の録音が完了しました。録音ファイルを保存し、確認チェックを入れてください。`,
-          false
-        );
+        showUploadResultMessage(uploadOk, `Trial ${outputTrial}`);
       } else {
         document.getElementById('outputNextButton').classList.add('hidden');
 
-        showMessage(
-          'Trial 6 の録音が完了しました。録音ファイルを保存し、確認チェックを入れてください。',
-          false
-        );
+        showUploadResultMessage(uploadOk, 'Trial 6');
       }
     };
 
