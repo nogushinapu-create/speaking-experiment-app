@@ -175,36 +175,6 @@ button:disabled {
       </div>
     </div>
   </div>
-</div>  <h2>Output-only Practice</h2>
-
-  <p id="outputTrialInfo"></p>
-
-  <img id="outputStimulus" src="stimulus-output.png" alt="stimulus image">
-
-  <div id="outputTimer">--</div>
-
-  <button id="outputStartButton" onclick="startOutputPreparation()">準備を開始する</button>
-  <button id="outputNextButton" class="hidden" onclick="nextOutputTrial()" disabled>次の試行へ</button>
-
-  <div id="outputDownloadArea" class="box hidden">
-    <p>録音が完了しました。以下から保存してください。</p>
-
-    <audio id="outputAudioPlayback" controls style="width:100%;"></audio>
-
-    <br><br>
-
-    <a id="outputDownloadLink">録音ファイルをダウンロード</a>
-
-    <div class="check-row">
-      <input type="checkbox" id="outputDownloadConfirmed" onchange="handleOutputDownloadConfirmation()">
-      <label for="outputDownloadConfirmed">録音ファイルを保存しました</label>
-    </div>
-
-    <p style="font-size: 14px;">
-      ※ファイルを保存した後、チェックを入れると次の試行へ進めます。
-    </p>
-  </div>
-</div>
 
   <script>
     const API_URL = 'https://script.google.com/macros/s/AKfycbxrlaa8aKg1nTfCVUquFtGszDyyF6TM53oel1w5MXVf3kIl5akfP9JyUA1qKmfv26gK/exec';
@@ -254,13 +224,19 @@ button:disabled {
         );
       }
     }
-
+    
+function hideAllPracticeAreas() {
+  document.getElementById('outputPracticeArea').classList.add('hidden');
+  document.getElementById('inputPracticeArea').classList.add('hidden');
+}
     function startPractice() {
-      document.getElementById('participantArea').classList.add('hidden');
-      document.getElementById('conditionArea').classList.remove('hidden');
+  document.getElementById('participantArea').classList.add('hidden');
+  document.getElementById('conditionArea').classList.remove('hidden');
 
-      const condition = participant.Condition;
+  hideAllPracticeAreas();
 
+  const condition = participant.Condition;
+      
       if (condition === 'Output_only') {
         showOutputOnlyIntro();
       } else if (condition === 'Input_only') {
@@ -273,6 +249,7 @@ button:disabled {
     }
 
     function showOutputOnlyIntro() {
+      hideAllPracticeAreas();
   document.getElementById('conditionTitle').textContent = 'Output-only Practice';
   document.getElementById('conditionDescription').innerHTML =
     `この条件では、イラストを見て、準備時間の後に英語で話します。<br><br>
@@ -282,6 +259,7 @@ button:disabled {
   renderOutputTrial();
 }
     function showInputOnlyIntro() {
+      hideAllPracticeAreas();
   document.getElementById('conditionTitle').textContent = 'Input-only Practice';
   document.getElementById('conditionDescription').innerHTML =
     `この条件では、モデル音声を5回聞いた後、準備時間を取り、最後に英語で話します。<br><br>
