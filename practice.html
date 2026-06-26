@@ -106,12 +106,43 @@ button:disabled {
   </div>
 
   <div id="conditionArea" class="box hidden">
-    <h2 id="conditionTitle"></h2>
-    <p id="conditionDescription"></p>
-  </div>
+  <h2 id="conditionTitle"></h2>
+  <p id="conditionDescription"></p>
+</div>
 
-  <div id="outputPracticeArea" class="box hidden">
-    <div id="inputPracticeArea" class="box hidden">
+<div id="outputPracticeArea" class="box hidden">
+  <h2>Output-only Practice</h2>
+
+  <p id="outputTrialInfo"></p>
+
+  <img id="outputStimulus" src="stimulus-output.png" alt="stimulus image">
+
+  <div id="outputTimer">--</div>
+
+  <button id="outputStartButton" onclick="startOutputPreparation()">準備を開始する</button>
+  <button id="outputNextButton" class="hidden" onclick="nextOutputTrial()" disabled>次の試行へ</button>
+
+  <div id="outputDownloadArea" class="box hidden">
+    <p>録音が完了しました。以下から保存してください。</p>
+
+    <audio id="outputAudioPlayback" controls style="width:100%;"></audio>
+
+    <br><br>
+
+    <a id="outputDownloadLink">録音ファイルをダウンロード</a>
+
+    <div class="check-row">
+      <input type="checkbox" id="outputDownloadConfirmed" onchange="handleOutputDownloadConfirmation()">
+      <label for="outputDownloadConfirmed">録音ファイルを保存しました</label>
+    </div>
+
+    <p style="font-size: 14px;">
+      ※ファイルを保存した後、チェックを入れると次の試行へ進めます。
+    </p>
+  </div>
+</div>
+
+<div id="inputPracticeArea" class="box hidden">
   <h2>Input-only Practice</h2>
 
   <p id="inputTrialInfo"></p>
@@ -131,8 +162,11 @@ button:disabled {
 
     <div id="inputDownloadArea" class="box hidden">
       <p>録音が完了しました。以下から保存してください。</p>
+
       <audio id="inputAudioPlayback" controls style="width:100%;"></audio>
+
       <br><br>
+
       <a id="inputDownloadLink">録音ファイルをダウンロード</a>
 
       <div class="check-row">
@@ -141,8 +175,7 @@ button:disabled {
       </div>
     </div>
   </div>
-</div>
-  <h2>Output-only Practice</h2>
+</div>  <h2>Output-only Practice</h2>
 
   <p id="outputTrialInfo"></p>
 
