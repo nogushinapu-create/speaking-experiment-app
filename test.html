@@ -324,14 +324,12 @@ if (isDone(statusValue)) {
     mediaRecorder.start();
     startSpeakingCountdown(speakingDuration);
 
-  } catch (error) {
-    showMessage(
-      `録音に失敗しました。<br>
-       Error name: ${error.name}<br>
-       Error message: ${error.message}`,
-      true
-    );
-
+  } 
+      showErrorScreen(
+  `録音に失敗しました。<br>
+   Error name: ${error.name}<br>
+   Error message: ${error.message}`
+);
     document.getElementById('speakButton').classList.remove('hidden');
   }
 }
@@ -467,6 +465,22 @@ function showUploadResultMessage(uploadOk, label) {
   document.getElementById('message')?.classList.add('hidden');
 
   document.getElementById('completeArea').classList.remove('hidden');
+}
+    function showErrorScreen(message) {
+  document.getElementById('loginArea')?.classList.add('hidden');
+  document.getElementById('participantArea')?.classList.add('hidden');
+  document.getElementById('conditionArea')?.classList.add('hidden');
+  document.getElementById('outputPracticeArea')?.classList.add('hidden');
+  document.getElementById('inputPracticeArea')?.classList.add('hidden');
+  document.getElementById('inputOutputPracticeArea')?.classList.add('hidden');
+  document.getElementById('testArea')?.classList.add('hidden');
+
+  showMessage(
+    `<strong>エラーが発生しました。</strong><br><br>
+     ${message}<br><br>
+     この画面を閉じずに、研究者に連絡してください。`,
+    true
+  );
 }
     
     function showMessage(message, isError) {
