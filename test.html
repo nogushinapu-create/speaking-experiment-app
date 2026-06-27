@@ -83,6 +83,14 @@
   </div>
 
   <div id="message" class="box hidden"></div>
+  <div id="completeArea" class="box hidden">
+  <h2>Completed</h2>
+  <p>
+    録音ファイルの保存確認が完了しました。<br>
+    ご協力ありがとうございました。<br><br>
+    この画面を閉じてください。
+  </p>
+</div>
 
   <div id="testArea" class="box hidden">
     <h2 id="testTitle"></h2>
@@ -365,6 +373,7 @@ if (isDone(statusValue)) {
     updateParticipantStatus(statusType);
 
     showMessage('テストが完了しました。録音ファイルが保存されていることを確認してください。', false);
+    showCompleteScreen();
   }
 }
 async function uploadAudioToDrive(audioBlob, metadata) {
@@ -451,7 +460,15 @@ function showUploadResultMessage(uploadOk, label) {
     function isDone(value) {
   return String(value || '').trim().toUpperCase() === 'DONE';
 }
-      
+
+    function showCompleteScreen() {
+  document.getElementById('loginArea')?.classList.add('hidden');
+  document.getElementById('testArea')?.classList.add('hidden');
+  document.getElementById('message')?.classList.add('hidden');
+
+  document.getElementById('completeArea').classList.remove('hidden');
+}
+    
     function showMessage(message, isError) {
       const box = document.getElementById('message');
       box.style.display = 'block';
