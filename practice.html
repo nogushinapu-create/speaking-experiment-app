@@ -1011,6 +1011,22 @@ function blobToBase64(blob) {
 
   document.getElementById('completeArea').classList.remove('hidden');
 }
+    function showErrorScreen(message) {
+  document.getElementById('loginArea')?.classList.add('hidden');
+  document.getElementById('participantArea')?.classList.add('hidden');
+  document.getElementById('conditionArea')?.classList.add('hidden');
+  document.getElementById('outputPracticeArea')?.classList.add('hidden');
+  document.getElementById('inputPracticeArea')?.classList.add('hidden');
+  document.getElementById('inputOutputPracticeArea')?.classList.add('hidden');
+  document.getElementById('testArea')?.classList.add('hidden');
+
+  showMessage(
+    `<strong>エラーが発生しました。</strong><br><br>
+     ${message}<br><br>
+     この画面を閉じずに、研究者に連絡してください。`,
+    true
+  );
+}
     
     function showMessage(message, isError) {
       const box = document.getElementById('message');
