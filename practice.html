@@ -114,6 +114,15 @@ button:disabled {
 
   <div id="message" class="box hidden"></div>
 
+  <div id="completeArea" class="box hidden">
+  <h2>Completed</h2>
+  <p>
+    録音ファイルの保存確認が完了しました。<br>
+    ご協力ありがとうございました。<br><br>
+    この画面を閉じてください。
+  </p>
+</div>
+
   <div id="participantArea" class="box hidden">
     <h2>Participant Information</h2>
     <p id="participantInfo"></p>
@@ -518,6 +527,7 @@ function handleOutputDownloadConfirmation() {
       'Output-only Practice が完了しました。全ての録音ファイルが保存されていることを確認してください。',
       false
     );
+    showCompleteScreen();
   }
 }
 
@@ -689,6 +699,7 @@ function handleInputDownloadConfirmation() {
       'Input-only Practice が完了しました。録音ファイルが保存されていることを確認してください。',
       false
     );
+    showCompleteScreen();
   }
 }
 let ioTrial = 1;
@@ -868,6 +879,7 @@ function handleIODownloadConfirmation() {
       'Input+output Practice が完了しました。全ての録音ファイルが保存されていることを確認してください。',
       false
     );
+    showCompleteScreen();
   }
 }
 
@@ -987,6 +999,18 @@ function blobToBase64(blob) {
    function isDone(value) {
   return String(value || '').trim().toUpperCase() === 'DONE';
 } 
+
+    function showCompleteScreen() {
+  document.getElementById('loginArea')?.classList.add('hidden');
+  document.getElementById('participantArea')?.classList.add('hidden');
+  document.getElementById('conditionArea')?.classList.add('hidden');
+  document.getElementById('outputPracticeArea')?.classList.add('hidden');
+  document.getElementById('inputPracticeArea')?.classList.add('hidden');
+  document.getElementById('inputOutputPracticeArea')?.classList.add('hidden');
+  document.getElementById('message')?.classList.add('hidden');
+
+  document.getElementById('completeArea').classList.remove('hidden');
+}
     
     function showMessage(message, isError) {
       const box = document.getElementById('message');
