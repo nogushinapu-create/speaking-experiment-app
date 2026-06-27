@@ -288,7 +288,7 @@ document.getElementById('participantArea').classList.remove('hidden');
            PracticeStatus: ${participant.PracticeStatus || ''}`;
 
       } catch (error) {
-        showMessage(
+        showErrorScreen(
           `参加者情報の取得に失敗しました。<br>
            Error: ${error.message}`,
           true
@@ -473,12 +473,12 @@ async function startOutputSpeaking() {
     outputMediaRecorder.start();
     startOutputSpeakingCountdown(duration);
 
-  } showErrorScreen(
+  } catch (error) {
+    showErrorScreen(
   `録音に失敗しました。<br>
    Error name: ${error.name}<br>
    Error message: ${error.message}`
 );
-    document.getElementById('outputStartButton').classList.remove('hidden');
   }
 }
 
@@ -656,14 +656,12 @@ async function startInputSpeaking() {
     startInputSpeakingCountdown(duration);
 
   } catch (error) {
-    showMessage(
+    showErrorScreen(
       `録音に失敗しました。<br>
        Error name: ${error.name}<br>
-       Error message: ${error.message}`,
-      true
+       Error message: ${error.message}`
+  
     );
-
-    document.getElementById('inputStartButton').classList.remove('hidden');
   }
 }
 
@@ -829,14 +827,11 @@ async function startIOSpeaking() {
     startIOSpeakingCountdown(duration);
 
   } catch (error) {
-    showMessage(
+    showErrorScreen(
       `録音に失敗しました。<br>
        Error name: ${error.name}<br>
-       Error message: ${error.message}`,
-      true
+       Error message: ${error.message}`
     );
-
-    document.getElementById('ioSpeakButton').classList.remove('hidden');
   }
 }
 
@@ -1015,8 +1010,7 @@ function blobToBase64(blob) {
   document.getElementById('outputPracticeArea')?.classList.add('hidden');
   document.getElementById('inputPracticeArea')?.classList.add('hidden');
   document.getElementById('inputOutputPracticeArea')?.classList.add('hidden');
-  document.getElementById('testArea')?.classList.add('hidden');
-
+  
   showMessage(
     `<strong>エラーが発生しました。</strong><br><br>
      ${message}<br><br>
