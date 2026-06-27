@@ -324,12 +324,13 @@ if (isDone(statusValue)) {
     mediaRecorder.start();
     startSpeakingCountdown(speakingDuration);
 
-  } 
-      showErrorScreen(
-  `録音に失敗しました。<br>
-   Error name: ${error.name}<br>
-   Error message: ${error.message}`
-);
+  } catch (error) {
+    showErrorScreen(
+      `録音に失敗しました。<br>
+       Error name: ${error.name}<br>
+       Error message: ${error.message}`
+    );
+
     document.getElementById('speakButton').classList.remove('hidden');
   }
 }
