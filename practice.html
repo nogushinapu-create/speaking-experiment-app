@@ -256,10 +256,21 @@ button:disabled {
 
         participant = data;
 
-        document.getElementById('loginArea').classList.add('hidden');
-        document.getElementById('message').classList.add('hidden');
-        document.getElementById('participantArea').classList.remove('hidden');
+if (isDone(participant.PracticeStatus)) {
+  document.getElementById('loginArea').classList.add('hidden');
 
+  showMessage(
+    `このPracticeは既に完了済みです。<br>
+     誤って開いた場合は、この画面を閉じてください。`,
+    true
+  );
+
+  return;
+}
+
+document.getElementById('loginArea').classList.add('hidden');
+document.getElementById('message').classList.add('hidden');
+document.getElementById('participantArea').classList.remove('hidden');
         document.getElementById('participantInfo').innerHTML =
           `SubjectID: ${participant.SubjectID}<br>
            Condition: ${participant.Condition}<br>
@@ -972,6 +983,10 @@ function blobToBase64(blob) {
     );
   }
 }
+
+   function isDone(value) {
+  return String(value || '').trim().toUpperCase() === 'DONE';
+} 
     
     function showMessage(message, isError) {
       const box = document.getElementById('message');
