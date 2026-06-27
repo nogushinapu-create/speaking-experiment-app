@@ -175,6 +175,27 @@
       let taskName = '';
       let imageFile = '';
       let title = '';
+      let statusValue = '';
+
+if (phase === 'pre') {
+  statusValue = participant.PreStatus;
+} else if (phase === 'post') {
+  statusValue = participant.PostStatus;
+} else if (phase === 'delayed') {
+  statusValue = participant.DelayedStatus;
+}
+
+if (isDone(statusValue)) {
+  document.getElementById('loginArea').classList.add('hidden');
+
+  showMessage(
+    `このテストは既に完了済みです。<br>
+     誤って開いた場合は、この画面を閉じてください。`,
+    true
+  );
+
+  return;
+}
 
       if (phase === 'pre') {
         taskName = participant.PreTask;
@@ -425,6 +446,10 @@ function showUploadResultMessage(uploadOk, label) {
       true
     );
   }
+}
+
+    function isDone(value) {
+  return String(value || '').trim().toUpperCase() === 'DONE';
 }
       
     function showMessage(message, isError) {
