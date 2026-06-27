@@ -473,14 +473,11 @@ async function startOutputSpeaking() {
     outputMediaRecorder.start();
     startOutputSpeakingCountdown(duration);
 
-  } catch (error) {
-    showMessage(
-      `録音に失敗しました。<br>
-       Error name: ${error.name}<br>
-       Error message: ${error.message}`,
-      true
-    );
-
+  } showErrorScreen(
+  `録音に失敗しました。<br>
+   Error name: ${error.name}<br>
+   Error message: ${error.message}`
+);
     document.getElementById('outputStartButton').classList.remove('hidden');
   }
 }
