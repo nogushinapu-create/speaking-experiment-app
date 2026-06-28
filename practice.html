@@ -354,6 +354,7 @@ function hideAllPracticeAreas() {
 }
 
     let outputTrial = 1;
+    let outputUploadOk = true;
 const outputTotalTrials = 6;
 const outputPreparationDuration = 60;
 
@@ -444,7 +445,7 @@ async function startOutputSpeaking() {
 
       document.getElementById('outputAudioPlayback').src = audioUrl;
 
-      const uploadOk = await uploadAudioToDrive(audioBlob, {
+      outputUploadOk = await uploadAudioToDrive(audioBlob, {
   phase: 'practice_output',
   trial: outputTrial,
   duration: duration,
@@ -462,11 +463,11 @@ async function startOutputSpeaking() {
         document.getElementById('outputNextButton').classList.remove('hidden');
         document.getElementById('outputNextButton').disabled = true;
 
-        showUploadResultMessage(uploadOk, `Trial ${outputTrial}`);
+        showUploadResultMessage(outputUploadOk, `Trial ${outputTrial}`);
       } else {
         document.getElementById('outputNextButton').classList.add('hidden');
 
-        showUploadResultMessage(uploadOk, 'Trial 6');
+        showUploadResultMessage(outputUploadOk, 'Trial 6');
       }
     };
 
@@ -505,6 +506,12 @@ function startOutputSpeakingCountdown(seconds) {
 function handleOutputDownloadConfirmation() {
   const checked = document.getElementById('outputDownloadConfirmed').checked;
 
+  if (!outputUploadOk) {
+  showUploadFailureMessage(`Trial ${outputTrial}`);
+  document.getElementById('outputDownloadConfirmed').checked = false;
+  return;
+}
+
   if (!checked) {
     document.getElementById('outputNextButton').disabled = true;
     return;
@@ -534,6 +541,7 @@ function nextOutputTrial() {
 }
 
 let inputAudioIndex = 1;
+let inputUploadOk = true;
 const inputTotalAudios = 5;
 
 const inputAudioFiles = {
@@ -635,7 +643,7 @@ async function startInputSpeaking() {
 
       document.getElementById('inputAudioPlayback').src = audioUrl;
 
-      const uploadOk = await uploadAudioToDrive(audioBlob, {
+      inputUploadOk = await uploadAudioToDrive(audioBlob, {
   phase: 'practice_input',
   trial: 'final',
   duration: duration,
@@ -649,7 +657,7 @@ async function startInputSpeaking() {
 
       document.getElementById('inputDownloadArea').classList.remove('hidden');
 
-      showUploadResultMessage(uploadOk, 'Input-only final recording');
+      showUploadResultMessage(inputUploadOk, 'Input-only final recording');
     };
 
     inputMediaRecorder.start();
@@ -687,6 +695,11 @@ function startInputSpeakingCountdown(seconds) {
 
 function handleInputDownloadConfirmation() {
   const checked = document.getElementById('inputDownloadConfirmed').checked;
+  if (!inputUploadOk) {
+  showUploadFailureMessage('Input-only final recording');
+  document.getElementById('inputDownloadConfirmed').checked = false;
+  return;
+}
 
   if (checked) {
     updateParticipantStatus('PracticeStatus');
@@ -698,6 +711,7 @@ function handleInputDownloadConfirmation() {
   }
 }
 let ioTrial = 1;
+let ioUploadOk = true;
 const ioTotalTrials = 6;
 const ioPreparationDuration = 60;
 
@@ -806,7 +820,7 @@ async function startIOSpeaking() {
 
       document.getElementById('ioAudioPlayback').src = audioUrl;
 
-      const uploadOk = await uploadAudioToDrive(audioBlob, {
+    ioUploadOk = await uploadAudioToDrive(audioBlob, {
   phase: 'practice_inputoutput',
   trial: ioTrial,
   duration: duration,
@@ -857,6 +871,11 @@ function startIOSpeakingCountdown(seconds) {
 
 function handleIODownloadConfirmation() {
   const checked = document.getElementById('ioDownloadConfirmed').checked;
+  if (!ioUploadOk) {
+  showUploadFailureMessage(`Trial ${ioTrial}`);
+  document.getElementById('ioDownloadConfirmed').checked = false;
+  return;
+}
 
   if (!checked) {
     document.getElementById('ioNextButton').disabled = true;
@@ -971,6 +990,16 @@ function blobToBase64(blob) {
   });
 }
 
+    function showUploadFailureMessage(label) {
+  showMessage(
+    `<strong>Google Driveへのアップロードに失敗しました。</strong><br><br>
+     ${label} の録音自体は完了しています。<br>
+     下のダウンロードリンクから録音ファイルを必ず手元に保存してください。<br><br>
+     保存後、この画面を閉じずに研究者に連絡してください。`,
+    true
+  );
+}
+
     function showUploadResultMessage(uploadOk, label) {
   if (uploadOk) {
     showMessage(
@@ -980,11 +1009,7 @@ function blobToBase64(blob) {
       false
     );
   } else {
-    showMessage(
-      `${label} の録音は完了しましたが、Google Driveへのアップロード送信に失敗しました。<br>
-       必ず下のリンクから録音ファイルを手元に保存し、研究者に連絡してください。`,
-      true
-    );
+    showUploadFailureMessage(label);
   }
 }
 
