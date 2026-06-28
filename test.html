@@ -131,6 +131,7 @@
     let mediaRecorder;
     let audioChunks = [];
     let countdownInterval;
+    let testUploadOk = true;
 
     function getPhaseFromUrl() {
       const params = new URLSearchParams(window.location.search);
@@ -304,13 +305,12 @@ if (isDone(statusValue)) {
 
       document.getElementById('audioPlayback').src = audioUrl;
 
-      const uploadOk = await uploadAudioToDrive(audioBlob, {
-        phase: phase,
-        trial: 'test',
-        duration: speakingDuration,
-        fileName: fileName
-      });
-
+      testUploadOk = await uploadAudioToDrive(audioBlob, {
+  phase: phase,
+  trial: 'test',
+  duration: speakingDuration,
+  fileName: fileName
+});
       const downloadLink = document.getElementById('downloadLink');
       downloadLink.href = audioUrl;
       downloadLink.download = fileName;
@@ -318,8 +318,7 @@ if (isDone(statusValue)) {
 
       document.getElementById('downloadArea').classList.remove('hidden');
 
-      showUploadResultMessage(uploadOk, phase);
-    };
+      showUploadResultMessage(testUploadOk, phase);
 
     mediaRecorder.start();
     startSpeakingCountdown(speakingDuration);
@@ -357,6 +356,11 @@ if (isDone(statusValue)) {
 
     function handleDownloadConfirmation() {
   const checked = document.getElementById('downloadConfirmed').checked;
+      if (!testUploadOk) {
+  showUploadFailureMessage(phase);
+  document.getElementById('downloadConfirmed').checked = false;
+  return;
+}
 
   if (checked) {
     let statusType = '';
@@ -439,6 +443,16 @@ function blobToBase64(blob) {
   }
 }
 
+function showUploadFailureMessage(label) {
+  showMessage(
+    `<strong>Google Driveへのアップロードに失敗しました。</strong><br><br>
+     ${label} の録音自体は完了しています。<br>
+     下のダウンロードリンクから録音ファイルを必ず手元に保存してください。<br><br>
+     保存後、この画面を閉じずに研究者に連絡してください。`,
+    true
+  );
+}
+      
 function showUploadResultMessage(uploadOk, label) {
   if (uploadOk) {
     showMessage(
@@ -448,14 +462,9 @@ function showUploadResultMessage(uploadOk, label) {
       false
     );
   } else {
-    showMessage(
-      `${label} の録音は完了しましたが、Google Driveへのアップロード送信に失敗しました。<br>
-       必ず下のリンクから録音ファイルを手元に保存し、研究者に連絡してください。`,
-      true
-    );
+    showUploadFailureMessage(label);
   }
 }
-
     function isDone(value) {
   return String(value || '').trim().toUpperCase() === 'DONE';
 }
