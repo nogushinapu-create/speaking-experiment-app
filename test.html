@@ -585,8 +585,7 @@ showTestScreen('speakingScreen');
   clearInterval(countdownInterval);
 }
 
-    
-        async function startSpeaking() {
+async function startSpeaking() {
   const speakButton =
     document.getElementById('speakButton');
 
@@ -619,7 +618,7 @@ showTestScreen('speakingScreen');
       }
     };
 
-        mediaRecorder.onstop = async () => {
+    mediaRecorder.onstop = async () => {
       stream.getTracks().forEach(track => track.stop());
 
       recordingStatus.classList.add('hidden');
@@ -646,10 +645,6 @@ showTestScreen('speakingScreen');
       downloadLink.textContent =
         `${fileName} をダウンロード`;
 
-      /*
-       * Driveへの送信完了を待つ前に、
-       * ローカル保存画面を表示する。
-       */
       showTestScreen('resultScreen');
 
       setUploadStatus(
@@ -667,45 +662,6 @@ showTestScreen('speakingScreen');
         }
       );
 
-      showUploadResultMessage(testUploadOk, phase);
-    };
-      stream.getTracks().forEach(track => track.stop());
-
-      recordingStatus.classList.add('hidden');
-
-      const audioBlob = new Blob(
-        audioChunks,
-        { type: 'audio/webm' }
-      );
-
-      const audioUrl =
-        URL.createObjectURL(audioBlob);
-
-      const fileName =
-        `${participant.SubjectID}_${phase}_test_${speakingDuration}s.webm`;
-
-      document.getElementById('audioPlayback').src =
-        audioUrl;
-
-      testUploadOk = await uploadAudioToDrive(
-        audioBlob,
-        {
-          phase: phase,
-          trial: 'test',
-          duration: speakingDuration,
-          fileName: fileName
-        }
-      );
-
-      const downloadLink =
-        document.getElementById('downloadLink');
-
-      downloadLink.href = audioUrl;
-      downloadLink.download = fileName;
-      downloadLink.textContent =
-        `${fileName} をダウンロード`;
-
-      showTestScreen('resultScreen');
       showUploadResultMessage(testUploadOk, phase);
     };
 
@@ -728,7 +684,6 @@ showTestScreen('speakingScreen');
     );
   }
 }
-
     function startSpeakingCountdown(seconds) {
   let remaining = seconds;
 
