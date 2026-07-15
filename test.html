@@ -5,13 +5,13 @@
   <title>Speaking Test</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      max-width: 820px;
-      margin: 40px auto;
-      padding: 20px;
-      line-height: 1.6;
-    }
-
+  font-family: Arial, sans-serif;
+  max-width: 1120px;
+  margin: 24px auto;
+  padding: 20px;
+  line-height: 1.6;
+  background: #f7f8fa;
+}
     input, button {
       width: 100%;
       padding: 14px;
@@ -213,6 +213,73 @@
       background: #fff0f0;
       color: #a20f15;
     }
+
+        #loginArea,
+    #instructionScreen,
+    #resultScreen,
+    #completeArea,
+    #message {
+      max-width: 820px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    #preparationScreen,
+    #speakingScreen {
+      max-width: 1080px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .task-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 220px;
+      gap: 24px;
+      align-items: center;
+    }
+
+    .task-sidebar {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: stretch;
+    }
+
+    .task-sidebar .timer-label {
+      margin-top: 0;
+    }
+
+    .task-sidebar .timer-display {
+      margin-bottom: 24px;
+    }
+
+    .stimulus-image {
+      width: 100%;
+      max-width: none;
+      max-height: 68vh;
+      margin: 0 auto;
+      object-fit: contain;
+      background: white;
+    }
+
+    @media (max-width: 850px) {
+      body {
+        margin: 12px auto;
+        padding: 12px;
+      }
+
+      .task-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .task-sidebar {
+        max-width: 100%;
+      }
+
+      .stimulus-image {
+        max-height: 58vh;
+      }
+    }
   </style>
 </head>
 
@@ -268,53 +335,79 @@
 
     <!-- 2. 準備画面 -->
     <section id="preparationScreen" class="test-screen hidden">
-      <div class="phase-label">準備</div>
+  <div class="phase-label">準備</div>
 
-      <h2 class="screen-heading">
-        イラストを見て、話す内容を準備してください
-      </h2>
+  <h2 class="screen-heading">
+    イラストを見て、話す内容を準備してください
+  </h2>
 
-      <img
-        id="preparationStimulus"
-        class="stimulus-image"
-        src=""
-        alt="Speaking task illustration"
-      >
+  <div class="task-layout">
+    <img
+      id="preparationStimulus"
+      class="stimulus-image"
+      src=""
+      alt="Speaking task illustration"
+    >
 
+    <aside class="task-sidebar">
       <p class="timer-label">準備時間</p>
-      <div id="preparationTimer" class="timer-display">--</div>
+
+      <div
+        id="preparationTimer"
+        class="timer-display"
+      >
+        --
+      </div>
+
+      <p>
+        イラストの内容について、英語で話す内容を考えてください。
+      </p>
+    </aside>
+  </div>
+</section>
     </section>
 
     <!-- 3. 発話画面 -->
     <section id="speakingScreen" class="test-screen hidden">
-      <div class="phase-label">発話</div>
+  <div class="phase-label">発話</div>
 
-      <h2 id="speakingHeading" class="screen-heading">
-        イラストを見ながら英語で話してください
-      </h2>
+  <h2 id="speakingHeading" class="screen-heading">
+    イラストを見ながら英語で話してください
+  </h2>
 
-            <div
+  <div class="task-layout">
+    <img
+      id="speakingStimulus"
+      class="stimulus-image"
+      src=""
+      alt="Speaking task illustration"
+    >
+
+    <aside class="task-sidebar">
+      <div
         id="recordingStatus"
         class="recording-status hidden"
         role="status"
         aria-live="polite"
       >
-        <div class="recording-indicator" aria-hidden="true">
+        <div
+          class="recording-indicator"
+          aria-hidden="true"
+        >
           🎙
         </div>
 
         <span class="recording-text">録音中</span>
       </div>
 
-      <img
-        id="speakingStimulus"
-        class="stimulus-image"
-        src=""
-        alt="Speaking task illustration"
-      >
-
       <p class="timer-label">発話時間</p>
-      <div id="speakingTimer" class="timer-display">--</div>
+
+      <div
+        id="speakingTimer"
+        class="timer-display"
+      >
+        --
+      </div>
 
       <button
         id="speakButton"
@@ -323,8 +416,9 @@
       >
         発話を開始する
       </button>
-    </section>
-
+    </aside>
+  </div>
+</section>
     <!-- 4. 保存確認画面 -->
     <section id="resultScreen" class="test-screen hidden">
       <div class="phase-label">録音完了</div>
