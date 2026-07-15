@@ -270,19 +270,6 @@
 
   </main>
 
-      <audio id="audioPlayback" controls style="width:100%;"></audio>
-
-      <br><br>
-
-      <a id="downloadLink">録音ファイルをダウンロード</a>
-
-      <div class="check-row">
-        <input type="checkbox" id="downloadConfirmed" onchange="handleDownloadConfirmation()">
-        <label for="downloadConfirmed">録音ファイルを保存しました</label>
-      </div>
-    </div>
-  </div>
-
   <script>
     const API_URL = 'https://script.google.com/macros/s/AKfycbztMQANbJ8k7BSChLs6hplaDRa5GOhJlIJc3hX2gb23gZm0THn0yzSFH2jOkfB-huDq/exec';
 
@@ -532,24 +519,31 @@ if (isDone(statusValue)) {
 }
 
     function startSpeakingCountdown(seconds) {
-      let remaining = seconds;
-      document.getElementById('timer').textContent = remaining;
+  let remaining = seconds;
 
+  document.getElementById('speakingTimer').textContent =
+    remaining;
+
+  clearInterval(countdownInterval);
+
+  countdownInterval = setInterval(() => {
+    remaining--;
+
+    document.getElementById('speakingTimer').textContent =
+      Math.max(remaining, 0);
+
+    if (remaining <= 0) {
       clearInterval(countdownInterval);
 
-      countdownInterval = setInterval(() => {
-        remaining--;
-        document.getElementById('speakingTimer').textContent = remaining;
-        if (remaining <= 0) {
-          clearInterval(countdownInterval);
-
-          if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-            mediaRecorder.stop();
-          }
-        }
-      }, 1000);
+      if (
+        mediaRecorder &&
+        mediaRecorder.state !== 'inactive'
+      ) {
+        mediaRecorder.stop();
+      }
     }
-
+  }, 1000);
+}
     function handleDownloadConfirmation() {
   const checked = document.getElementById('downloadConfirmed').checked;
       if (!testUploadOk) {
