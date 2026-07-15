@@ -136,6 +136,55 @@
     .primary-button:hover {
       background: #174a82;
     }
+        .recording-status {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      margin: 16px auto 20px;
+      font-weight: bold;
+      color: #c5161d;
+    }
+
+    .recording-indicator {
+      width: 64px;
+      height: 64px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: #d71920;
+      color: white;
+      font-size: 30px;
+      line-height: 1;
+      box-shadow: 0 0 0 0 rgba(215, 25, 32, 0.5);
+      animation: recordingPulse 1.2s infinite;
+    }
+
+    .recording-text {
+      font-size: 20px;
+      letter-spacing: 0.04em;
+    }
+
+    @keyframes recordingPulse {
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(215, 25, 32, 0.5);
+      }
+
+      50% {
+        opacity: 0.6;
+        transform: scale(0.94);
+        box-shadow: 0 0 0 14px rgba(215, 25, 32, 0);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .recording-indicator {
+        animation: none;
+      }
+    }
   </style>
 </head>
 
@@ -215,6 +264,19 @@
       <h2 id="speakingHeading" class="screen-heading">
         イラストを見ながら英語で話してください
       </h2>
+
+            <div
+        id="recordingStatus"
+        class="recording-status hidden"
+        role="status"
+        aria-live="polite"
+      >
+        <div class="recording-indicator" aria-hidden="true">
+          🎙
+        </div>
+
+        <span class="recording-text">録音中</span>
+      </div>
 
       <img
         id="speakingStimulus"
@@ -423,6 +485,8 @@ if (isDone(statusValue)) {
         speakingDuration;
 
       document.getElementById('speakButton').classList.remove('hidden');
+      document.getElementById('recordingStatus')
+  .classList.add('hidden');
       document.getElementById('downloadConfirmed').checked = false;
 
       showTestScreen('instructionScreen');
@@ -455,22 +519,55 @@ if (isDone(statusValue)) {
           document.getElementById('speakingTimer').textContent =
             speakingDuration;
 
-          document.getElementById('speakButton').classList.remove('hidden');
+          document.getElementById('speakingHeading').textContent =
+  '準備時間が終了しました。発話を開始してください。';
 
-          showTestScreen('speakingScreen');
+document.getElementById('recordingStatus')
+  .classList.add('hidden');
+
+document.getElementById('speakButton')
+  .classList.remove('hidden');
+
+showTestScreen('speakingScreen');
         }
       }, 1000);
     }
 
+    function streamCleanupAfterError() {
+  const recordingStatus =
+    document.getElementById('recordingStatus');
+
+  if (recordingStatus) {
+    recordingStatus.classList.add('hidden');
+  }
+
+  clearInterval(countdownInterval);
+}
+
+    
         async function startSpeaking() {
-      document.getElementById('speakButton').classList.add('hidden');
-      document.getElementById('speakingHeading').textContent =
-        '録音中です。イラストを見ながら英語で話してください。';
+  const speakButton =
+    document.getElementById('speakButton');
 
-      document.getElementById('message').classList.add('hidden');
+  const speakingHeading =
+    document.getElementById('speakingHeading');
 
-      try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  const recordingStatus =
+    document.getElementById('recordingStatus');
+
+  speakButton.classList.add('hidden');
+  recordingStatus.classList.add('hidden');
+
+  speakingHeading.textContent =
+    'マイクを準備しています。しばらくお待ちください。';
+
+  document.getElementById('message').classList.add('hidden');
+
+  try {
+    const stream =
+      await navigator.mediaDevices.getUserMedia({
+        audio: true
+      });
 
     audioChunks = [];
     mediaRecorder = new MediaRecorder(stream);
@@ -484,32 +581,56 @@ if (isDone(statusValue)) {
     mediaRecorder.onstop = async () => {
       stream.getTracks().forEach(track => track.stop());
 
-      const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-      const audioUrl = URL.createObjectURL(audioBlob);
+      recordingStatus.classList.add('hidden');
+
+      const audioBlob = new Blob(
+        audioChunks,
+        { type: 'audio/webm' }
+      );
+
+      const audioUrl =
+        URL.createObjectURL(audioBlob);
 
       const fileName =
         `${participant.SubjectID}_${phase}_test_${speakingDuration}s.webm`;
 
-      document.getElementById('audioPlayback').src = audioUrl;
+      document.getElementById('audioPlayback').src =
+        audioUrl;
 
-      testUploadOk = await uploadAudioToDrive(audioBlob, {
-  phase: phase,
-  trial: 'test',
-  duration: speakingDuration,
-  fileName: fileName
-});
-      const downloadLink = document.getElementById('downloadLink');
+      testUploadOk = await uploadAudioToDrive(
+        audioBlob,
+        {
+          phase: phase,
+          trial: 'test',
+          duration: speakingDuration,
+          fileName: fileName
+        }
+      );
+
+      const downloadLink =
+        document.getElementById('downloadLink');
+
       downloadLink.href = audioUrl;
       downloadLink.download = fileName;
-      downloadLink.textContent = `${fileName} をダウンロード`;
+      downloadLink.textContent =
+        `${fileName} をダウンロード`;
 
       showTestScreen('resultScreen');
       showUploadResultMessage(testUploadOk, phase);
     };
+
     mediaRecorder.start();
+
+    speakingHeading.textContent =
+      'イラストを見ながら英語で話してください。';
+
+    recordingStatus.classList.remove('hidden');
+
     startSpeakingCountdown(speakingDuration);
 
   } catch (error) {
+    streamCleanupAfterError();
+
     showErrorScreen(
       `録音に失敗しました。<br>
        Error name: ${error.name}<br>
