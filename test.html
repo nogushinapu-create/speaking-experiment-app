@@ -188,6 +188,31 @@
         .recording-status.hidden {
       display: none;
     }
+        .upload-status {
+      margin: 20px 0;
+      padding: 14px 16px;
+      border: 1px solid;
+      border-radius: 6px;
+      font-weight: bold;
+    }
+
+    .upload-pending {
+      border-color: #d6a100;
+      background: #fff8dc;
+      color: #735800;
+    }
+
+    .upload-success {
+      border-color: #24823b;
+      background: #edf8f0;
+      color: #17652c;
+    }
+
+    .upload-error {
+      border-color: #c5161d;
+      background: #fff0f0;
+      color: #a20f15;
+    }
   </style>
 </head>
 
@@ -308,8 +333,17 @@
 
       <p>
         録音が完了しました。以下の音声を確認し、
-        録音ファイルをラップトップにも保存してください。
+        録音ファイルをご自身のパソコンにも保存してください。
       </p>
+
+    　 <div
+        id="uploadStatus"
+        class="upload-status upload-pending"
+        role="status"
+        aria-live="polite"
+      >
+        録音ファイルを処理しています。
+      </div>
 
       <audio
         id="audioPlayback"
@@ -491,6 +525,10 @@ if (isDone(statusValue)) {
       document.getElementById('recordingStatus')
   .classList.add('hidden');
       document.getElementById('downloadConfirmed').checked = false;
+      setUploadStatus(
+  'pending',
+  '録音ファイルを処理しています。'
+);
 
       showTestScreen('instructionScreen');
     }
@@ -581,7 +619,56 @@ showTestScreen('speakingScreen');
       }
     };
 
-    mediaRecorder.onstop = async () => {
+        mediaRecorder.onstop = async () => {
+      stream.getTracks().forEach(track => track.stop());
+
+      recordingStatus.classList.add('hidden');
+
+      const audioBlob = new Blob(
+        audioChunks,
+        { type: 'audio/webm' }
+      );
+
+      const audioUrl =
+        URL.createObjectURL(audioBlob);
+
+      const fileName =
+        `${participant.SubjectID}_${phase}_test_${speakingDuration}s.webm`;
+
+      document.getElementById('audioPlayback').src =
+        audioUrl;
+
+      const downloadLink =
+        document.getElementById('downloadLink');
+
+      downloadLink.href = audioUrl;
+      downloadLink.download = fileName;
+      downloadLink.textContent =
+        `${fileName} をダウンロード`;
+
+      /*
+       * Driveへの送信完了を待つ前に、
+       * ローカル保存画面を表示する。
+       */
+      showTestScreen('resultScreen');
+
+      setUploadStatus(
+        'pending',
+        '録音ファイルをGoogle Driveへ送信しています。しばらくお待ちください。'
+      );
+
+      testUploadOk = await uploadAudioToDrive(
+        audioBlob,
+        {
+          phase: phase,
+          trial: 'test',
+          duration: speakingDuration,
+          fileName: fileName
+        }
+      );
+
+      showUploadResultMessage(testUploadOk, phase);
+    };
       stream.getTracks().forEach(track => track.stop());
 
       recordingStatus.classList.add('hidden');
@@ -695,8 +782,7 @@ showTestScreen('speakingScreen');
 }
 async function uploadAudioToDrive(audioBlob, metadata) {
   try {
-    showMessage('録音ファイルをGoogle Driveへアップロードしています...', false);
-
+    
     const base64Audio = await blobToBase64(audioBlob);
 
     const payload = {
@@ -758,22 +844,31 @@ function blobToBase64(blob) {
 }
 
 function showUploadFailureMessage(label) {
-  showMessage(
-    `<strong>Google Driveへのアップロードに失敗しました。</strong><br><br>
-     ${label} の録音自体は完了しています。<br>
-     下のダウンロードリンクから録音ファイルを必ず手元に保存してください。<br><br>
-     保存後、この画面を閉じずに研究者に連絡してください。`,
-    true
+  setUploadStatus(
+    'error',
+    `${label}の録音ファイルをGoogle Driveへ送信できませんでした。` +
+    '録音ファイルを必ずラップトップに保存し、画面を閉じずに研究者へ連絡してください。'
   );
+}
+    function setUploadStatus(type, message) {
+  const uploadStatus =
+    document.getElementById('uploadStatus');
+
+  if (!uploadStatus) {
+    return;
+  }
+
+  uploadStatus.className =
+    `upload-status upload-${type}`;
+
+  uploadStatus.textContent = message;
 }
       
 function showUploadResultMessage(uploadOk, label) {
   if (uploadOk) {
-    showMessage(
-      `${label} の録音が完了しました。<br>
-       Google Driveへのアップロード処理を送信しました。<br>
-       念のため、下のリンクから手元にも保存し、確認チェックを入れてください。`,
-      false
+    setUploadStatus(
+      'success',
+      'Google Driveへの送信処理が完了しました。続けて、録音ファイルをラップトップにも保存してください。'
     );
   } else {
     showUploadFailureMessage(label);
