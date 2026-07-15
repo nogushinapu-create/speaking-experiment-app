@@ -70,6 +70,72 @@
       width: auto;
       margin-top: 0;
     }
+        .test-screen {
+      margin-top: 20px;
+      padding: 24px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .screen-heading {
+      margin-top: 0;
+      margin-bottom: 16px;
+    }
+
+    .phase-label {
+      display: inline-block;
+      margin-bottom: 12px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: #eef2f7;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .instruction-list {
+      padding-left: 24px;
+    }
+
+    .instruction-list li {
+      margin-bottom: 8px;
+    }
+
+    .stimulus-image {
+      display: block;
+      width: 100%;
+      max-width: 960px;
+      max-height: 62vh;
+      margin: 20px auto;
+      object-fit: contain;
+      border: 1px solid #ccc;
+    }
+
+    .timer-label {
+      margin-top: 20px;
+      margin-bottom: 0;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .timer-display {
+      margin: 4px 0 24px;
+      font-size: 56px;
+      font-weight: bold;
+      line-height: 1.2;
+      text-align: center;
+    }
+
+    .primary-button {
+      background: #1f5fa8;
+      color: white;
+      border: none;
+      border-radius: 6px;
+    }
+
+    .primary-button:hover {
+      background: #174a82;
+    }
   </style>
 </head>
 
@@ -92,20 +158,117 @@
   </p>
 </div>
 
-  <div id="testArea" class="box hidden">
-    <h2 id="testTitle"></h2>
+  <main id="testArea" class="hidden">
 
-    <p id="testInfo"></p>
+    <!-- 1. 指示画面 -->
+    <section id="instructionScreen" class="test-screen">
+      <div id="instructionPhaseLabel" class="phase-label"></div>
 
-    <img id="stimulus" src="" alt="stimulus image">
+      <h2 id="testTitle" class="screen-heading"></h2>
 
-    <div id="timer">--</div>
+      <p id="participantDisplay"></p>
 
-    <button id="prepareButton" onclick="startPreparation()">準備を開始する</button>
-    <button id="speakButton" class="hidden" onclick="startSpeaking()">発話を開始する</button>
+      <p>
+        これから、イラストの内容について英語で話すタスクを行います。
+      </p>
 
-    <div id="downloadArea" class="box hidden">
-      <p>録音が完了しました。以下から保存してください。</p>
+      <ul class="instruction-list">
+        <li id="preparationInstruction"></li>
+        <li id="speakingInstruction"></li>
+        <li>準備中と発話中は、イラストを確認できます。</li>
+        <li>発話は自動的に録音されます。</li>
+        <li>録音中はブラウザを閉じたり、別のページへ移動したりしないでください。</li>
+      </ul>
+
+      <button
+        id="prepareButton"
+        class="primary-button"
+        onclick="startPreparation()"
+      >
+        準備を開始する
+      </button>
+    </section>
+
+    <!-- 2. 準備画面 -->
+    <section id="preparationScreen" class="test-screen hidden">
+      <div class="phase-label">準備</div>
+
+      <h2 class="screen-heading">
+        イラストを見て、話す内容を準備してください
+      </h2>
+
+      <img
+        id="preparationStimulus"
+        class="stimulus-image"
+        src=""
+        alt="Speaking task illustration"
+      >
+
+      <p class="timer-label">準備時間</p>
+      <div id="preparationTimer" class="timer-display">--</div>
+    </section>
+
+    <!-- 3. 発話画面 -->
+    <section id="speakingScreen" class="test-screen hidden">
+      <div class="phase-label">発話</div>
+
+      <h2 id="speakingHeading" class="screen-heading">
+        イラストを見ながら英語で話してください
+      </h2>
+
+      <img
+        id="speakingStimulus"
+        class="stimulus-image"
+        src=""
+        alt="Speaking task illustration"
+      >
+
+      <p class="timer-label">発話時間</p>
+      <div id="speakingTimer" class="timer-display">--</div>
+
+      <button
+        id="speakButton"
+        class="primary-button"
+        onclick="startSpeaking()"
+      >
+        発話を開始する
+      </button>
+    </section>
+
+    <!-- 4. 保存確認画面 -->
+    <section id="resultScreen" class="test-screen hidden">
+      <div class="phase-label">録音完了</div>
+
+      <h2 class="screen-heading">録音ファイルを保存してください</h2>
+
+      <p>
+        録音が完了しました。以下の音声を確認し、
+        録音ファイルをラップトップにも保存してください。
+      </p>
+
+      <audio
+        id="audioPlayback"
+        controls
+        style="width: 100%;"
+      ></audio>
+
+      <p>
+        <a id="downloadLink">録音ファイルをダウンロード</a>
+      </p>
+
+      <div class="check-row">
+        <input
+          type="checkbox"
+          id="downloadConfirmed"
+          onchange="handleDownloadConfirmation()"
+        >
+        <label for="downloadConfirmed">
+          録音ファイルを保存しました
+        </label>
+      </div>
+    </section>
+
+  </main>
 
       <audio id="audioPlayback" controls style="width:100%;"></audio>
 
@@ -132,6 +295,28 @@
     let audioChunks = [];
     let countdownInterval;
     let testUploadOk = true;
+
+        const testScreenIds = [
+      'instructionScreen',
+      'preparationScreen',
+      'speakingScreen',
+      'resultScreen'
+    ];
+
+    function showTestScreen(screenId) {
+      testScreenIds.forEach(id => {
+        const screen = document.getElementById(id);
+
+        if (screen) {
+          screen.classList.toggle('hidden', id !== screenId);
+        }
+      });
+
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
 
     function getPhaseFromUrl() {
       const params = new URLSearchParams(window.location.search);
@@ -229,60 +414,75 @@ if (isDone(statusValue)) {
 
       document.getElementById('testTitle').textContent = title;
 
-      document.getElementById('testInfo').innerHTML =
-  `SubjectID：${participant.SubjectID}<br>
-   Phase：${title}<br>
-   Task：${taskName}<br>
-   準備時間：${preparationDuration}秒<br>
-   発話時間：${speakingDuration}秒<br><br>
-   これからイラストを見て、話す内容を準備します。<br>
-   準備時間が終わると「発話を開始する」ボタンが表示されます。<br>
-   ボタンを押すと録音が始まります。`;
+      document.getElementById('instructionPhaseLabel').textContent =
+        title;
 
-      document.getElementById('stimulus').src = imageFile;
-      document.getElementById('timer').textContent = preparationDuration;
+      document.getElementById('participantDisplay').textContent =
+        `Subject ID：${participant.SubjectID}`;
 
-      document.getElementById('prepareButton').classList.remove('hidden');
-      document.getElementById('speakButton').classList.add('hidden');
-      document.getElementById('downloadArea').classList.add('hidden');
+      document.getElementById('preparationInstruction').textContent =
+        `イラストを見ながら、${preparationDuration}秒間で話す内容を準備してください。`;
+
+      document.getElementById('speakingInstruction').textContent =
+        `準備終了後、イラストについて英語で${speakingDuration}秒間話してください。`;
+
+      document.getElementById('preparationStimulus').src = imageFile;
+      document.getElementById('speakingStimulus').src = imageFile;
+
+      document.getElementById('preparationTimer').textContent =
+        preparationDuration;
+
+      document.getElementById('speakingTimer').textContent =
+        speakingDuration;
+
+      document.getElementById('speakButton').classList.remove('hidden');
       document.getElementById('downloadConfirmed').checked = false;
+
+      showTestScreen('instructionScreen');
     }
 
-    function startPreparation() {
-      document.getElementById('prepareButton').classList.add('hidden');
+        function startPreparation() {
+      document.getElementById('message').classList.add('hidden');
 
-      showMessage(
-  '準備時間です。イラストを見て、英語で話す内容を考えてください。',
-  false
-);
+      showTestScreen('preparationScreen');
       startPreparationCountdown(preparationDuration);
     }
 
-    function startPreparationCountdown(seconds) {
+        function startPreparationCountdown(seconds) {
       let remaining = seconds;
-      document.getElementById('timer').textContent = remaining;
+
+      document.getElementById('preparationTimer').textContent =
+        remaining;
 
       clearInterval(countdownInterval);
 
       countdownInterval = setInterval(() => {
         remaining--;
-        document.getElementById('timer').textContent = remaining;
+
+        document.getElementById('preparationTimer').textContent =
+          Math.max(remaining, 0);
 
         if (remaining <= 0) {
           clearInterval(countdownInterval);
-          document.getElementById('timer').textContent = speakingDuration;
+
+          document.getElementById('speakingTimer').textContent =
+            speakingDuration;
+
           document.getElementById('speakButton').classList.remove('hidden');
-          showMessage('準備時間が終了しました。「発話を開始する」を押すと録音が始まります。', false);
+
+          showTestScreen('speakingScreen');
         }
       }, 1000);
     }
 
-    async function startSpeaking() {
-  document.getElementById('speakButton').classList.add('hidden');
+        async function startSpeaking() {
+      document.getElementById('speakButton').classList.add('hidden');
+      document.getElementById('speakingHeading').textContent =
+        '録音中です。イラストを見ながら英語で話してください。';
 
-  showMessage('発話録音を開始しました。', false);
+      document.getElementById('message').classList.add('hidden');
 
-  try {
+      try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
     audioChunks = [];
@@ -316,8 +516,7 @@ if (isDone(statusValue)) {
       downloadLink.download = fileName;
       downloadLink.textContent = `${fileName} をダウンロード`;
 
-      document.getElementById('downloadArea').classList.remove('hidden');
-
+      showTestScreen('resultScreen');
       showUploadResultMessage(testUploadOk, phase);
     };
     mediaRecorder.start();
@@ -329,8 +528,6 @@ if (isDone(statusValue)) {
        Error name: ${error.name}<br>
        Error message: ${error.message}`
     );
-
-    document.getElementById('speakButton').classList.remove('hidden');
   }
 }
 
@@ -342,8 +539,7 @@ if (isDone(statusValue)) {
 
       countdownInterval = setInterval(() => {
         remaining--;
-        document.getElementById('timer').textContent = remaining;
-
+        document.getElementById('speakingTimer').textContent = remaining;
         if (remaining <= 0) {
           clearInterval(countdownInterval);
 
