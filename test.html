@@ -896,7 +896,7 @@ function showUploadFailureMessage(label) {
   setUploadStatus(
     'error',
     `${label}の録音ファイルをGoogle Driveへ送信できませんでした。` +
-    '録音ファイルを必ずラップトップに保存し、画面を閉じずに研究者へ連絡してください。'
+    '録音ファイルを必ずご自身のパソコンに保存し、画面を閉じずに研究者へ連絡してください。'
   );
 }
     function setUploadStatus(type, message) {
@@ -917,7 +917,7 @@ function showUploadResultMessage(uploadOk, label) {
   if (uploadOk) {
     setUploadStatus(
       'success',
-      'Google Driveへの送信処理が完了しました。続けて、録音ファイルをラップトップにも保存してください。'
+      'Google Driveへの送信処理が完了しました。続けて、録音ファイルをご自身のパソコンにも保存してください。'
     );
   } else {
     showUploadFailureMessage(label);
