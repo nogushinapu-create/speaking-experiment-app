@@ -36,8 +36,8 @@
     }
 
     .hidden {
-      display: none;
-    }
+  display: none !important;
+}
     #outputStimulus {
   width: 100%;
   max-height: 460px;
@@ -99,6 +99,40 @@ button:disabled {
   width: auto;
   margin-top: 0;
 }
+
+    .test-screen {
+  margin-top: 20px;
+  padding: 24px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.screen-heading {
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.phase-label {
+  display: inline-block;
+  margin-bottom: 12px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #eef2f7;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.primary-button {
+  background: #1f5fa8;
+  color: white;
+  border: none;
+  border-radius: 6px;
+}
+
+.primary-button:hover {
+  background: #174a82;
+}
     
   </style>
 </head>
@@ -123,17 +157,25 @@ button:disabled {
   </p>
 </div>
 
-  <div id="participantArea" class="box hidden">
-    <h2>Participant Information</h2>
-    <p id="participantInfo"></p>
-    <button onclick="startPractice()">Practiceを開始する</button>
-  </div>
+  
 
-  <div id="conditionArea" class="box hidden">
-  <h2 id="conditionTitle"></h2>
-  <p id="conditionDescription"></p>
-</div>
+  <section id="conditionArea" class="test-screen hidden">
+  <div class="phase-label">Practice</div>
 
+  <h2 id="conditionTitle" class="screen-heading"></h2>
+
+  <p id="conditionParticipant"></p>
+
+  <div id="conditionDescription"></div>
+
+  <button
+    id="conditionStartButton"
+    class="primary-button"
+    type="button"
+  >
+    Practiceを開始する
+  </button>
+</section>
 <div id="outputPracticeArea" class="box hidden">
   <h2>Output-only Practice</h2>
 
@@ -279,14 +321,8 @@ if (isDone(participant.PracticeStatus)) {
 
 document.getElementById('loginArea').classList.add('hidden');
 document.getElementById('message').classList.add('hidden');
-document.getElementById('participantArea').classList.remove('hidden');
-        document.getElementById('participantInfo').innerHTML =
-          `SubjectID: ${participant.SubjectID}<br>
-           Condition: ${participant.Condition}<br>
-           PreTask: ${participant.PreTask}<br>
-           PostTask: ${participant.PostTask}<br>
-           PracticeStatus: ${participant.PracticeStatus || ''}`;
 
+startPractice();
       } catch (error) {
         showErrorScreen(
           `参加者情報の取得に失敗しました。<br>
@@ -302,89 +338,140 @@ function hideAllPracticeAreas() {
   document.getElementById('inputOutputPracticeArea').classList.add('hidden');
 }
     function startPractice() {
-  document.getElementById('participantArea').classList.add('hidden');
-  document.getElementById('conditionArea').classList.remove('hidden');
-
   hideAllPracticeAreas();
 
+  document.getElementById('conditionArea')
+    .classList.remove('hidden');
+
+  document.getElementById('conditionParticipant').textContent =
+    `Subject ID：${participant.SubjectID}`;
+
   const condition = participant.Condition;
-      
-      if (condition === 'Output_only') {
-        showOutputOnlyIntro();
-      } else if (condition === 'Input_only') {
-        showInputOnlyIntro();
-      } else if (condition === 'Input+output') {
-        showInputOutputIntro();
-      } else {
-        showMessage(`未定義のConditionです: ${condition}`, true);
-      }
-    }
+
+  if (condition === 'Output_only') {
+    showOutputOnlyIntro();
+  } else if (condition === 'Input_only') {
+    showInputOnlyIntro();
+  } else if (condition === 'Input+output') {
+    showInputOutputIntro();
+  } else {
+    showErrorScreen(
+      `未定義のConditionです：${condition}`
+    );
+  }
+}
 
     function showOutputOnlyIntro() {
-      hideAllPracticeAreas();
-  document.getElementById('conditionTitle').textContent = 'Output-only Practice';
-  document.getElementById('conditionDescription').innerHTML =
-    `この条件では、イラストを見て、準備時間の後に英語で話します。<br><br>
-     準備ができたら、下のボタンからTrial 1を開始してください。`;
+  hideAllPracticeAreas();
 
-  document.getElementById('outputPracticeArea').classList.remove('hidden');
-  renderOutputTrial();
-  document.getElementById('outputSpeakButton').classList.add('hidden');
+  document.getElementById('conditionTitle').textContent =
+    'Speaking Practice';
+
+  document.getElementById('conditionDescription').innerHTML =
+    `
+      <p>
+        これから、同じイラストについて英語で繰り返し話す練習を行います。
+      </p>
+
+      <ul>
+        <li>全部で6回発話します。</li>
+        <li>各回の前に60秒間の準備時間があります。</li>
+        <li>Trial 1と2の発話時間は120秒です。</li>
+        <li>Trial 3から6の発話時間は90秒です。</li>
+        <li>準備中と発話中はイラストを確認できます。</li>
+        <li>録音中はブラウザを閉じないでください。</li>
+      </ul>
+    `;
+
+  const startButton =
+    document.getElementById('conditionStartButton');
+
+  startButton.textContent =
+    'Trial 1を開始する';
+
+  startButton.onclick = () => {
+    document.getElementById('conditionArea')
+      .classList.add('hidden');
+
+    document.getElementById('outputPracticeArea')
+      .classList.remove('hidden');
+
+    renderOutputTrial();
+  };
 }
     function showInputOnlyIntro() {
-      hideAllPracticeAreas();
-  document.getElementById('conditionTitle').textContent = 'Input-only Practice';
-  document.getElementById('conditionDescription').innerHTML =
-    `この条件では、モデル音声を5回聞いた後、準備時間を取り、最後に英語で話します。<br><br>
-     まず音声1を再生してください。`;
+  hideAllPracticeAreas();
 
-  document.getElementById('inputPracticeArea').classList.remove('hidden');
-  renderInputAudio();
+  document.getElementById('conditionTitle').textContent =
+    'Listening and Speaking Practice';
+
+  document.getElementById('conditionDescription').innerHTML =
+    `
+      <p>
+        これから、英語のモデル音声を聞いた後、イラストについて英語で話します。
+      </p>
+
+      <ul>
+        <li>5つのモデル音声を順番に聞きます。</li>
+        <li>全ての音声を聞いた後、60秒間で発話内容を準備します。</li>
+        <li>発話時間は120秒です。</li>
+        <li>音声は最後まで注意して聞いてください。</li>
+        <li>録音中はブラウザを閉じないでください。</li>
+      </ul>
+    `;
+
+  const startButton =
+    document.getElementById('conditionStartButton');
+
+  startButton.textContent =
+    '音声聴取を開始する';
+
+  startButton.onclick = () => {
+    document.getElementById('conditionArea')
+      .classList.add('hidden');
+
+    document.getElementById('inputPracticeArea')
+      .classList.remove('hidden');
+
+    renderInputAudio();
+  };
 }
     function showInputOutputIntro() {
   hideAllPracticeAreas();
 
-  document.getElementById('conditionTitle').textContent = 'Input+output Practice';
+  document.getElementById('conditionTitle').textContent =
+    'Speaking and Listening Practice';
+
   document.getElementById('conditionDescription').innerHTML =
-    `この条件では、準備、発話、モデル音声の聴取を組み合わせて練習します。<br><br>
-     Trial 1から開始してください。`;
+    `
+      <p>
+        これから、イラストについて英語で話し、モデル音声を聞く練習を繰り返します。
+      </p>
 
-  document.getElementById('inputOutputPracticeArea').classList.remove('hidden');
-  renderIOTrial();
-}
+      <ul>
+        <li>全部で6回発話します。</li>
+        <li>各回の前に60秒間の準備時間があります。</li>
+        <li>発話後にモデル音声を聞きます。</li>
+        <li>Trial 6の後にはモデル音声はありません。</li>
+        <li>録音中はブラウザを閉じないでください。</li>
+      </ul>
+    `;
 
-    let outputTrial = 1;
-    let outputUploadOk = true;
-const outputTotalTrials = 6;
-const outputPreparationDuration = 60;
+  const startButton =
+    document.getElementById('conditionStartButton');
 
-const outputSpeakingDurations = {
-  1: 120,
-  2: 120,
-  3: 90,
-  4: 90,
-  5: 90,
-  6: 90
-};
+  startButton.textContent =
+    'Trial 1を開始する';
 
-let outputMediaRecorder;
-let outputAudioChunks = [];
-let outputCountdownInterval;
+  startButton.onclick = () => {
+    document.getElementById('conditionArea')
+      .classList.add('hidden');
 
-function renderOutputTrial() {
-  const speakingDuration = outputSpeakingDurations[outputTrial];
+    document.getElementById('inputOutputPracticeArea')
+      .classList.remove('hidden');
 
-  document.getElementById('outputTrialInfo').innerHTML =
-    `Trial ${outputTrial} / ${outputTotalTrials}<br>
-     準備時間：${outputPreparationDuration}秒<br>
-     発話時間：${speakingDuration}秒`;
-
-  document.getElementById('outputTimer').textContent = outputPreparationDuration;
-  document.getElementById('outputStartButton').classList.remove('hidden');
-  document.getElementById('outputNextButton').classList.add('hidden');
-  document.getElementById('outputNextButton').disabled = true;
-  document.getElementById('outputDownloadArea').classList.add('hidden');
-  document.getElementById('outputDownloadConfirmed').checked = false;
+    renderIOTrial();
+  };
 }
 
 function startOutputPreparation() {
