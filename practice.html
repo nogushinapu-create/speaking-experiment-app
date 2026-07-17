@@ -459,35 +459,143 @@ button:disabled {
     </button>
   </section>
 
-  <div
-    id="inputSpeakingArea"
-    class="test-screen hidden"
-  >
-    <p>音声の聴取が完了しました。準備時間の後、英語で話してください。</p>
+  <!-- 発話準備画面 -->
+<section
+  id="inputPreparationScreen"
+  class="test-screen hidden"
+>
+  <div class="phase-label">準備</div>
 
-    <img id="inputStimulus" src="stimulus-output.png" alt="stimulus image">
+  <h2 id="inputPreparationHeading" class="screen-heading">
+    イラストを見て、話す内容を準備してください
+  </h2>
 
-    <div id="inputTimer">--</div>
+  <div class="task-layout">
+    <img
+      id="inputPreparationStimulus"
+      class="stimulus-image"
+      src="stimulus-output.png"
+      alt="Speaking practice illustration"
+    >
 
-    <button id="inputStartButton" onclick="startInputPreparation()">準備を開始する</button>
+    <aside class="task-sidebar">
+      <p class="timer-label">準備時間</p>
 
-    <button id="inputSpeakButton" class="hidden" onclick="startInputSpeaking()">発話を開始する</button>
-
-    <div id="inputDownloadArea" class="box hidden">
-      <p>録音が完了しました。以下から保存してください。</p>
-
-      <audio id="inputAudioPlayback" controls style="width:100%;"></audio>
-
-      <br><br>
-
-      <a id="inputDownloadLink">録音ファイルをダウンロード</a>
-
-      <div class="check-row">
-        <input type="checkbox" id="inputDownloadConfirmed" onchange="handleInputDownloadConfirmation()">
-        <label for="inputDownloadConfirmed">録音ファイルを保存しました</label>
+      <div
+        id="inputPreparationTimer"
+        class="timer-display"
+      >
+        --
       </div>
-    </div>
+
+      <button
+        id="inputStartButton"
+        class="primary-button"
+        type="button"
+        onclick="startInputPreparation()"
+      >
+        準備を開始する
+      </button>
+    </aside>
   </div>
+</section>
+
+<!-- 発話画面 -->
+<section
+  id="inputSpeakingScreen"
+  class="test-screen hidden"
+>
+  <div class="phase-label">発話</div>
+
+  <h2 id="inputSpeakingHeading" class="screen-heading">
+    準備時間が終了しました。発話を開始してください。
+  </h2>
+
+  <div class="task-layout">
+    <img
+      id="inputSpeakingStimulus"
+      class="stimulus-image"
+      src="stimulus-output.png"
+      alt="Speaking practice illustration"
+    >
+
+    <aside class="task-sidebar">
+      <div
+        id="inputRecordingStatus"
+        class="recording-status hidden"
+        role="status"
+        aria-live="polite"
+      >
+        <div
+          class="recording-indicator"
+          aria-hidden="true"
+        >
+          🎙
+        </div>
+
+        <span class="recording-text">録音中</span>
+      </div>
+
+      <p class="timer-label">発話時間</p>
+
+      <div
+        id="inputSpeakingTimer"
+        class="timer-display"
+      >
+        --
+      </div>
+
+      <button
+        id="inputSpeakButton"
+        class="primary-button"
+        type="button"
+        onclick="startInputSpeaking()"
+      >
+        発話を開始する
+      </button>
+    </aside>
+  </div>
+</section>
+
+<!-- 保存画面 -->
+<section
+  id="inputResultScreen"
+  class="test-screen hidden"
+>
+  <div class="phase-label">録音完了</div>
+
+  <h2 class="screen-heading">
+    録音ファイルを保存してください
+  </h2>
+
+  <p>
+    録音内容を確認し、ファイルをラップトップにも保存してください。
+  </p>
+
+  <audio
+    id="inputAudioPlayback"
+    controls
+    style="width: 100%;"
+  ></audio>
+
+  <p>
+    <a id="inputDownloadLink">
+      録音ファイルをダウンロード
+    </a>
+  </p>
+
+  <div class="check-row">
+    <input
+      type="checkbox"
+      id="inputDownloadConfirmed"
+      onchange="handleInputDownloadConfirmation()"
+    >
+
+    <label for="inputDownloadConfirmed">
+      録音ファイルを保存しました
+    </label>
+  </div>
+</section>
  </div>
 
   <div id="inputOutputPracticeArea" class="box hidden">
@@ -677,15 +785,11 @@ function hideAllPracticeAreas() {
   document.getElementById('inputPracticeArea')
     .classList.remove('hidden');
 
-  document.getElementById('inputListeningScreen')
-    .classList.remove('hidden');
-
-  document.getElementById('inputSpeakingArea')
-    .classList.add('hidden');
-
   inputAudioIndex = 1;
   inputAudioCompleted = false;
+  inputUploadOk = true;
 
+  showInputScreen('inputListeningScreen');
   renderInputAudio();
 };
     }
@@ -1054,6 +1158,33 @@ let inputMediaRecorder;
 let inputAudioChunks = [];
 let inputCountdownInterval;
 
+const inputScreenIds = [
+  'inputListeningScreen',
+  'inputPreparationScreen',
+  'inputSpeakingScreen',
+  'inputResultScreen'
+];
+
+function showInputScreen(screenId) {
+  inputScreenIds.forEach(id => {
+    const screen = document.getElementById(id);
+
+    if (screen) {
+      screen.classList.toggle(
+        'hidden',
+        id !== screenId
+      );
+    }
+  });
+
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth'
+  });
+}
+
+function renderInputAudio() {    
+    
 function renderInputAudio() {
   const player =
     document.getElementById('inputAudioPlayer');
@@ -1097,6 +1228,50 @@ function nextInputAudio() {
     return;
   }
 
+  document.getElementById(
+    'inputPreparationTimer'
+  ).textContent =
+    inputPreparationDuration;
+
+  document.getElementById(
+    'inputSpeakingTimer'
+  ).textContent =
+    inputSpeakingDuration;
+
+  document.getElementById(
+    'inputPreparationHeading'
+  ).textContent =
+    'イラストを見て、話す内容を準備してください';
+
+  document.getElementById(
+    'inputSpeakingHeading'
+  ).textContent =
+    '準備時間が終了しました。発話を開始してください。';
+
+  document.getElementById(
+    'inputStartButton'
+  ).classList.remove('hidden');
+
+  document.getElementById(
+    'inputSpeakButton'
+  ).classList.remove('hidden');
+
+  document.getElementById(
+    'inputRecordingStatus'
+  ).classList.add('hidden');
+
+  document.getElementById(
+    'inputDownloadConfirmed'
+  ).checked = false;
+
+  showInputScreen('inputPreparationScreen');
+}
+  if (inputAudioIndex < inputTotalAudios) {
+    inputAudioIndex++;
+    renderInputAudio();
+    return;
+  }
+
   document.getElementById('inputListeningScreen')
     .classList.add('hidden');
 
@@ -1112,42 +1287,71 @@ function nextInputAudio() {
   });
 }
 function startInputPreparation() {
-  document.getElementById('inputStartButton').classList.add('hidden');
+  document.getElementById(
+    'inputStartButton'
+  ).classList.add('hidden');
 
-  showMessage(
-    '準備時間です。画像を見て、話す内容を考えてください。',
-    false
+  document.getElementById(
+    'inputPreparationHeading'
+  ).textContent =
+    '準備中です。英語で話す内容を考えてください。';
+
+  document.getElementById('message')
+    .classList.add('hidden');
+
+  startInputPreparationCountdown(
+    inputPreparationDuration
   );
-
-  startInputPreparationCountdown(inputPreparationDuration);
 }
-
 function startInputPreparationCountdown(seconds) {
   let remaining = seconds;
-  document.getElementById('inputTimer').textContent = remaining;
+
+  const timer =
+    document.getElementById('inputPreparationTimer');
+
+  timer.textContent = remaining;
 
   clearInterval(inputCountdownInterval);
 
   inputCountdownInterval = setInterval(() => {
     remaining--;
-    document.getElementById('inputTimer').textContent = remaining;
+    timer.textContent = Math.max(remaining, 0);
 
     if (remaining <= 0) {
       clearInterval(inputCountdownInterval);
-      document.getElementById('inputTimer').textContent = inputSpeakingDuration;
-      document.getElementById('inputSpeakButton').classList.remove('hidden');
-      showMessage('準備時間が終了しました。「発話を開始する」を押すと録音が始まります。', false);
+
+      document.getElementById(
+        'inputSpeakingTimer'
+      ).textContent =
+        inputSpeakingDuration;
+
+      showInputScreen('inputSpeakingScreen');
     }
   }, 1000);
 }
-
 async function startInputSpeaking() {
   const duration = inputSpeakingDuration;
 
-  showMessage('発話録音を開始しました。', false);
+  const speakButton =
+    document.getElementById('inputSpeakButton');
+
+  const speakingHeading =
+    document.getElementById('inputSpeakingHeading');
+
+  const recordingStatus =
+    document.getElementById('inputRecordingStatus');
+
+  speakButton.classList.add('hidden');
+  recordingStatus.classList.add('hidden');
+
+  speakingHeading.textContent =
+    'マイクを準備しています。しばらくお待ちください。';
 
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const stream =
+      await navigator.mediaDevices.getUserMedia({
+        audio: true
+      });
 
     inputAudioChunks = [];
     inputMediaRecorder = new MediaRecorder(stream);
@@ -1161,64 +1365,94 @@ async function startInputSpeaking() {
     inputMediaRecorder.onstop = async () => {
       stream.getTracks().forEach(track => track.stop());
 
-      const audioBlob = new Blob(inputAudioChunks, { type: 'audio/webm' });
-      const audioUrl = URL.createObjectURL(audioBlob);
+      recordingStatus.classList.add('hidden');
+
+      const audioBlob = new Blob(
+        inputAudioChunks,
+        { type: 'audio/webm' }
+      );
+
+      const audioUrl =
+        URL.createObjectURL(audioBlob);
 
       const fileName =
         `${participant.SubjectID}_practice_input_final_${duration}s.webm`;
 
-      document.getElementById('inputAudioPlayback').src = audioUrl;
+      document.getElementById('inputAudioPlayback').src =
+        audioUrl;
 
-      inputUploadOk = await uploadAudioToDrive(audioBlob, {
-  phase: 'practice_input',
-  trial: 'final',
-  duration: duration,
-  fileName: fileName
-});
+      const downloadLink =
+        document.getElementById('inputDownloadLink');
 
-      const downloadLink = document.getElementById('inputDownloadLink');
       downloadLink.href = audioUrl;
       downloadLink.download = fileName;
-      downloadLink.textContent = `${fileName} をダウンロード`;
+      downloadLink.textContent =
+        `${fileName} をダウンロード`;
 
-      document.getElementById('inputDownloadArea').classList.remove('hidden');
+      showInputScreen('inputResultScreen');
 
-      showUploadResultMessage(inputUploadOk, 'Input-only final recording');
+      inputUploadOk = await uploadAudioToDrive(
+        audioBlob,
+        {
+          phase: 'practice_input',
+          trial: 'final',
+          duration: duration,
+          fileName: fileName
+        }
+      );
+
+      showUploadResultMessage(
+        inputUploadOk,
+        'Input-only final recording'
+      );
     };
 
     inputMediaRecorder.start();
+
+    speakingHeading.textContent =
+      'イラストを見ながら英語で話してください。';
+
+    recordingStatus.classList.remove('hidden');
+
     startInputSpeakingCountdown(duration);
 
   } catch (error) {
+    recordingStatus.classList.add('hidden');
+    clearInterval(inputCountdownInterval);
+
     showErrorScreen(
       `録音に失敗しました。<br>
        Error name: ${error.name}<br>
        Error message: ${error.message}`
-  
     );
   }
 }
-
 function startInputSpeakingCountdown(seconds) {
   let remaining = seconds;
-  document.getElementById('inputTimer').textContent = remaining;
+
+  const timer =
+    document.getElementById('inputSpeakingTimer');
+
+  timer.textContent = remaining;
 
   clearInterval(inputCountdownInterval);
 
   inputCountdownInterval = setInterval(() => {
     remaining--;
-    document.getElementById('inputTimer').textContent = remaining;
+    timer.textContent = Math.max(remaining, 0);
 
     if (remaining <= 0) {
       clearInterval(inputCountdownInterval);
 
-      if (inputMediaRecorder && inputMediaRecorder.state !== 'inactive') {
+      if (
+        inputMediaRecorder &&
+        inputMediaRecorder.state !== 'inactive'
+      ) {
         inputMediaRecorder.stop();
       }
     }
   }, 1000);
 }
-
 function handleInputDownloadConfirmation() {
   const checked = document.getElementById('inputDownloadConfirmed').checked;
   if (!inputUploadOk) {
