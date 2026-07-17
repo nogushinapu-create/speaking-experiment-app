@@ -368,7 +368,7 @@ button:disabled {
     <p id="outputResultTrialInfo"></p>
 
     <p>
-      録音内容を確認し、ファイルをラップトップにも保存してください。
+      録音内容を確認し、ファイルをパソコンにも保存してください。
     </p>
 
     <audio
@@ -526,8 +526,6 @@ button:disabled {
       >
         --
       </div>
-
-      inputSpeakingScreen
     </aside>
   </div>
 </section>
@@ -544,7 +542,7 @@ button:disabled {
   </h2>
 
   <p>
-    録音内容を確認し、ファイルをラップトップにも保存してください。
+    録音内容を確認し、ファイルをパソコンにも保存してください。
   </p>
 
   <audio
@@ -1175,12 +1173,7 @@ async function renderOutputTrial() {
     'outputSpeakingTimer'
   ).textContent =
     speakingDuration;
-
-  document.getElementById(
-    'outputPreparationHeading'
-  ).textContent =
-    'イラストを見て、話す内容を準備してください。';
-
+  
  document.getElementById(
   'outputPreparationHeading'
 ).textContent =
