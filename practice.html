@@ -296,15 +296,6 @@ button:disabled {
         >
           --
         </div>
-
-        <button
-          id="outputStartButton"
-          class="primary-button"
-          type="button"
-          onclick="startOutputPreparation()"
-        >
-          準備を開始する
-        </button>
       </aside>
     </div>
   </section>
@@ -355,15 +346,6 @@ button:disabled {
         >
           --
         </div>
-
-        <button
-          id="outputSpeakButton"
-          class="primary-button"
-          type="button"
-          onclick="startOutputSpeaking()"
-        >
-          発話を開始する
-        </button>
       </aside>
     </div>
   </section>
@@ -895,16 +877,25 @@ function hideAllPracticeAreas() {
   startButton.textContent =
     'Trial 1を開始する';
 
-  startButton.onclick = () => {
-    lockExperimentPage();
-    document.getElementById('conditionArea')
-      .classList.add('hidden');
+  startButton.onclick = async () => {
+  if (outputTransitioning) {
+    return;
+  }
 
-    document.getElementById('outputPracticeArea')
-      .classList.remove('hidden');
+  lockExperimentPage();
 
-    renderOutputTrial();
-  };
+  startButton.disabled = true;
+  startButton.textContent =
+    'マイクを準備しています。しばらくお待ちください。';
+
+  document.getElementById('conditionArea')
+    .classList.add('hidden');
+
+  document.getElementById('outputPracticeArea')
+    .classList.remove('hidden');
+
+  await renderOutputTrial();
+};
 }
     function showInputOnlyIntro() {
   hideAllPracticeAreas();
@@ -1008,9 +999,10 @@ const outputSpeakingDurations = {
 };
 
 let outputMediaRecorder;
+let outputRecordingStream = null;
 let outputAudioChunks = [];
 let outputCountdownInterval;
-
+let outputTransitioning = false;
 /*
  * Output-onlyの画面切替
  */
@@ -1038,7 +1030,13 @@ function showOutputScreen(screenId) {
   });
 }
     
-function renderOutputTrial() {
+async function renderOutputTrial() {
+  if (outputTransitioning) {
+    return;
+  }
+
+  outputTransitioning = true;
+
   const speakingDuration =
     outputSpeakingDurations[outputTrial];
 
@@ -1070,32 +1068,22 @@ function renderOutputTrial() {
   document.getElementById(
     'outputPreparationHeading'
   ).textContent =
-    'イラストを見て、話す内容を準備してください';
+    'イラストを見て、話す内容を準備してください。';
 
   document.getElementById(
     'outputSpeakingHeading'
   ).textContent =
-    '準備時間が終了しました。発話を開始してください。';
-
-  document.getElementById(
-    'outputStartButton'
-  ).classList.remove('hidden');
-
-  document.getElementById(
-    'outputSpeakButton'
-  ).classList.remove('hidden');
+    '録音中です。イラストを見ながら英語で話してください。';
 
   document.getElementById(
     'outputRecordingStatus'
   ).classList.add('hidden');
 
-  document.getElementById(
-    'outputNextButton'
-  ).classList.add('hidden');
+  const nextButton =
+    document.getElementById('outputNextButton');
 
-  document.getElementById(
-    'outputNextButton'
-  ).disabled = true;
+  nextButton.classList.add('hidden');
+  nextButton.disabled = true;
 
   document.getElementById(
     'outputDownloadConfirmed'
@@ -1103,57 +1091,86 @@ function renderOutputTrial() {
 
   outputUploadOk = true;
 
-  showOutputScreen('outputPreparationScreen');
+  try {
+    /*
+     * イラストを表示する前にマイクを確保する。
+     */
+    outputRecordingStream =
+      await navigator.mediaDevices.getUserMedia({
+        audio: true
+      });
+
+    showOutputScreen('outputPreparationScreen');
+
+    outputTransitioning = false;
+
+    startOutputPreparationCountdown(
+      outputPreparationDuration
+    );
+
+  } catch (error) {
+    outputTransitioning = false;
+
+    showErrorScreen(
+      `マイクを使用できませんでした。<br>
+       Error name: ${error.name}<br>
+       Error message: ${error.message}`
+    );
+  }
 }
-function startOutputPreparation() {
-  document.getElementById(
-    'outputStartButton'
-  ).classList.add('hidden');
+    
 
-  document.getElementById(
-    'outputPreparationHeading'
-  ).textContent =
-    '準備中です。英語で話す内容を考えてください。';
-
-  document.getElementById('message')
-    .classList.add('hidden');
-
-  startOutputPreparationCountdown(
-    outputPreparationDuration
-  );
-}
 function startOutputPreparationCountdown(seconds) {
-  let remaining = seconds;
-
   const timer =
     document.getElementById('outputPreparationTimer');
 
-  timer.textContent = remaining;
+  const endTime =
+    performance.now() + seconds * 1000;
+
+  timer.textContent = seconds;
 
   clearInterval(outputCountdownInterval);
 
   outputCountdownInterval = setInterval(() => {
-    remaining--;
-    timer.textContent = Math.max(remaining, 0);
+    const millisecondsRemaining =
+      endTime - performance.now();
 
-    if (remaining <= 0) {
+    const remaining =
+      Math.max(
+        0,
+        Math.ceil(millisecondsRemaining / 1000)
+      );
+
+    timer.textContent = remaining;
+
+    if (millisecondsRemaining <= 0) {
       clearInterval(outputCountdownInterval);
+      timer.textContent = 0;
 
-      document.getElementById(
-        'outputSpeakingTimer'
-      ).textContent =
-        outputSpeakingDurations[outputTrial];
-
-      showOutputScreen('outputSpeakingScreen');
+      startOutputSpeaking();
     }
-  }, 1000);
+  }, 100);
 }
-async function startOutputSpeaking() {
+
+function cleanupOutputRecording() {
+  clearInterval(outputCountdownInterval);
+
+  document.getElementById(
+    'outputRecordingStatus'
+  )?.classList.add('hidden');
+
+  if (outputRecordingStream) {
+    outputRecordingStream
+      .getTracks()
+      .forEach(track => track.stop());
+
+    outputRecordingStream = null;
+  }
+}
+    
+function startOutputSpeaking() {
   const duration =
     outputSpeakingDurations[outputTrial];
-
-  const speakButton =
-    document.getElementById('outputSpeakButton');
 
   const speakingHeading =
     document.getElementById('outputSpeakingHeading');
@@ -1161,17 +1178,19 @@ async function startOutputSpeaking() {
   const recordingStatus =
     document.getElementById('outputRecordingStatus');
 
-  speakButton.classList.add('hidden');
-  recordingStatus.classList.add('hidden');
-
-  speakingHeading.textContent =
-    'マイクを準備しています。しばらくお待ちください。';
+  if (!outputRecordingStream) {
+    showErrorScreen(
+      '録音用のマイクを取得できていません。'
+    );
+    return;
+  }
 
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const stream = outputRecordingStream;
 
     outputAudioChunks = [];
-    outputMediaRecorder = new MediaRecorder(stream);
+    outputMediaRecorder =
+      new MediaRecorder(stream);
 
     outputMediaRecorder.ondataavailable = event => {
       if (event.data.size > 0) {
@@ -1181,73 +1200,124 @@ async function startOutputSpeaking() {
 
     outputMediaRecorder.onstop = async () => {
       stream.getTracks().forEach(track => track.stop());
+
+      if (outputRecordingStream === stream) {
+        outputRecordingStream = null;
+      }
+
       recordingStatus.classList.add('hidden');
-      const audioBlob = new Blob(outputAudioChunks, { type: 'audio/webm' });
-      const audioUrl = URL.createObjectURL(audioBlob);
+
+      const audioBlob = new Blob(
+        outputAudioChunks,
+        { type: 'audio/webm' }
+      );
+
+      const audioUrl =
+        URL.createObjectURL(audioBlob);
 
       const fileName =
         `${participant.SubjectID}_practice_output_trial${outputTrial}_${duration}s.webm`;
 
-      document.getElementById('outputAudioPlayback').src = audioUrl;
+      document.getElementById(
+        'outputAudioPlayback'
+      ).src = audioUrl;
 
-      outputUploadOk = await uploadAudioToDrive(audioBlob, {
-  phase: 'practice_output',
-  trial: outputTrial,
-  duration: duration,
-  fileName: fileName
-});
+      const downloadLink =
+        document.getElementById('outputDownloadLink');
 
-      const downloadLink = document.getElementById('outputDownloadLink');
       downloadLink.href = audioUrl;
       downloadLink.download = fileName;
-      downloadLink.textContent = `${fileName} をダウンロード`;
+      downloadLink.textContent =
+        `${fileName} をダウンロード`;
 
-     showOutputScreen('outputResultScreen');
+      showOutputScreen('outputResultScreen');
+
+      outputUploadOk = await uploadAudioToDrive(
+        audioBlob,
+        {
+          phase: 'practice_output',
+          trial: outputTrial,
+          duration: duration,
+          fileName: fileName
+        }
+      );
+
       if (outputTrial < outputTotalTrials) {
-        document.getElementById('outputNextButton').classList.remove('hidden');
-        document.getElementById('outputNextButton').disabled = true;
+        const nextButton =
+          document.getElementById('outputNextButton');
 
-        showUploadResultMessage(outputUploadOk, `Trial ${outputTrial}`);
+        nextButton.classList.remove('hidden');
+        nextButton.disabled = true;
+
+        showUploadResultMessage(
+          outputUploadOk,
+          `Trial ${outputTrial}`
+        );
       } else {
-        document.getElementById('outputNextButton').classList.add('hidden');
+        document.getElementById(
+          'outputNextButton'
+        ).classList.add('hidden');
 
-        showUploadResultMessage(outputUploadOk, 'Trial 6');
+        showUploadResultMessage(
+          outputUploadOk,
+          'Trial 6'
+        );
       }
     };
 
+    document.getElementById(
+      'outputSpeakingTimer'
+    ).textContent =
+      duration;
+
+    speakingHeading.textContent =
+      '録音中です。イラストを見ながら英語で話してください。';
+
+    recordingStatus.classList.remove('hidden');
+
+    showOutputScreen('outputSpeakingScreen');
+
     outputMediaRecorder.start();
 
-speakingHeading.textContent =
-  'イラストを見ながら英語で話してください。';
+    startOutputSpeakingCountdown(duration);
 
-recordingStatus.classList.remove('hidden');
-
-startOutputSpeakingCountdown(duration);
   } catch (error) {
+    cleanupOutputRecording();
+
     showErrorScreen(
-  `録音に失敗しました。<br>
-   Error name: ${error.name}<br>
-   Error message: ${error.message}`
-);
+      `録音に失敗しました。<br>
+       Error name: ${error.name}<br>
+       Error message: ${error.message}`
+    );
   }
 }
 
 function startOutputSpeakingCountdown(seconds) {
-  let remaining = seconds;
-
   const timer =
     document.getElementById('outputSpeakingTimer');
 
-  timer.textContent = remaining;
+  const endTime =
+    performance.now() + seconds * 1000;
+
+  timer.textContent = seconds;
 
   clearInterval(outputCountdownInterval);
 
   outputCountdownInterval = setInterval(() => {
-    remaining--;
-    timer.textContent = Math.max(remaining, 0);
+    const millisecondsRemaining =
+      endTime - performance.now();
 
-    if (remaining <= 0) {
+    const remaining =
+      Math.max(
+        0,
+        Math.ceil(millisecondsRemaining / 1000)
+      );
+
+    timer.textContent = remaining;
+
+    if (millisecondsRemaining <= 0) {
       clearInterval(outputCountdownInterval);
+      timer.textContent = 0;
 
       if (
         outputMediaRecorder &&
@@ -1256,8 +1326,9 @@ function startOutputSpeakingCountdown(seconds) {
         outputMediaRecorder.stop();
       }
     }
-  }, 1000);
+  }, 100);
 }
+    
 function handleOutputDownloadConfirmation() {
   const checked = document.getElementById('outputDownloadConfirmed').checked;
 
@@ -1290,11 +1361,21 @@ function handleOutputDownloadConfirmation() {
   }
 }
 
-function nextOutputTrial() {
-  outputTrial++;
-  renderOutputTrial();
-}
+async function nextOutputTrial() {
+  if (outputTransitioning) {
+    return;
+  }
 
+  const nextButton =
+    document.getElementById('outputNextButton');
+
+  nextButton.disabled = true;
+
+  outputTrial++;
+
+  await renderOutputTrial();
+}
+    
 let inputAudioIndex = 1;
 let inputUploadOk = true;
 let inputAudioCompleted = false;
