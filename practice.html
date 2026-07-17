@@ -1182,9 +1182,7 @@ function showInputScreen(screenId) {
     behavior: 'smooth'
   });
 }
-
-function renderInputAudio() {    
-    
+     
 function renderInputAudio() {
   const player =
     document.getElementById('inputAudioPlayer');
@@ -1266,26 +1264,7 @@ function nextInputAudio() {
 
   showInputScreen('inputPreparationScreen');
 }
-  if (inputAudioIndex < inputTotalAudios) {
-    inputAudioIndex++;
-    renderInputAudio();
-    return;
-  }
-
-  document.getElementById('inputListeningScreen')
-    .classList.add('hidden');
-
-  document.getElementById('inputSpeakingArea')
-    .classList.remove('hidden');
-
-  document.getElementById('inputTimer').textContent =
-    inputPreparationDuration;
-
-  window.scrollTo({
-    top: 0,
-    behavior: 'smooth'
-  });
-}
+  
 function startInputPreparation() {
   document.getElementById(
     'inputStartButton'
