@@ -274,9 +274,9 @@ button:disabled {
     <div class="phase-label">準備</div>
 
     <h2 id="outputPreparationHeading" class="screen-heading">
-      イラストを見て、話す内容を準備してください
-    </h2>
-
+  英語でどのようにストーリーを説明するか、頭の中で準備してください。
+  指定された英文(One day, a woman...)から始め、番号の順に説明してください。
+</h2>
     <p id="outputTrialInfo"></p>
 
     <div class="task-layout">
@@ -449,8 +449,9 @@ button:disabled {
   <div class="phase-label">準備</div>
 
   <h2 id="inputPreparationHeading" class="screen-heading">
-    イラストを見て、話す内容を準備してください
-  </h2>
+  英語でどのようにストーリーを説明するか、頭の中で準備してください。
+  指定された英文(One day, a woman...)から始め、番号の順に説明してください。
+</h2>
 
   <div class="task-layout">
     <img
@@ -571,9 +572,9 @@ button:disabled {
     <div class="phase-label">準備</div>
 
     <h2 id="ioPreparationHeading" class="screen-heading">
-      イラストを見て、話す内容を準備してください
-    </h2>
-
+  英語でどのようにストーリーを説明するか、頭の中で準備してください。
+  指定された英文(One day, a woman...)から始め、番号の順に説明してください。
+</h2>
     <p id="ioTrialInfo"></p>
 
     <div class="task-layout">
@@ -1170,10 +1171,10 @@ async function renderOutputTrial() {
   ).textContent =
     'イラストを見て、話す内容を準備してください。';
 
-  document.getElementById(
-    'outputSpeakingHeading'
-  ).textContent =
-    '録音中です。イラストを見ながら英語で話してください。';
+ document.getElementById(
+  'inputPreparationHeading'
+).textContent =
+  '英語でどのようにストーリーを説明するか、頭の中で準備してください。指定された英文から始め、番号の順に説明してください。';
 
   document.getElementById(
     'outputRecordingStatus'
@@ -1605,10 +1606,9 @@ function beginInputPreparation() {
     inputSpeakingDuration;
 
   document.getElementById(
-    'inputPreparationHeading'
-  ).textContent =
-    '準備中です。英語で話す内容を考えてください。';
-
+  'inputPreparationHeading'
+).textContent =
+  '英語でどのようにストーリーを説明するか、頭の中で準備してください。指定された英文から始め、番号の順に説明してください。';
   document.getElementById(
     'inputSpeakingHeading'
   ).textContent =
@@ -1938,10 +1938,10 @@ function renderIOTrial() {
     speakingDuration;
 
   document.getElementById(
-    'ioPreparationHeading'
-  ).textContent =
-    '準備中です。英語で話す内容を考えてください。';
-
+  'ioPreparationHeading'
+).textContent =
+  '英語でどのようにストーリーを説明するか、頭の中で準備してください。指定された英文から始め、番号の順に説明してください。';
+  
   document.getElementById(
     'ioSpeakingHeading'
   ).textContent =
