@@ -1037,6 +1037,8 @@ const outputScreenIds = [
 ];
 
 function showOutputScreen(screenId) {
+  document.getElementById('message')
+    .classList.add('hidden');
   outputScreenIds.forEach(id => {
     const screen = document.getElementById(id);
 
@@ -1430,6 +1432,8 @@ const inputScreenIds = [
 ];
 
 function showInputScreen(screenId) {
+   document.getElementById('message')
+    .classList.add('hidden');
   inputScreenIds.forEach(id => {
     const screen = document.getElementById(id);
 
@@ -1804,6 +1808,8 @@ const ioScreenIds = [
 ];
 
 function showIOScreen(screenId) {
+  document.getElementById('message')
+    .classList.add('hidden');
   ioScreenIds.forEach(id => {
     const screen = document.getElementById(id);
 
@@ -2185,8 +2191,6 @@ function cleanupIORecording() {
 
 async function uploadAudioToDrive(audioBlob, metadata) {
   try {
-    showMessage('録音ファイルをGoogle Driveへアップロードしています...', false);
-
     const base64Audio = await blobToBase64(audioBlob);
 
     const payload = {
@@ -2244,12 +2248,12 @@ function blobToBase64(blob) {
 
     function showUploadResultMessage(uploadOk, label) {
   if (uploadOk) {
-    showMessage(
-      `${label} の録音が完了しました。<br>
-       Google Driveへのアップロード処理を送信しました。<br>
-       念のため、下のリンクから手元にも保存し、確認チェックを入れてください。`,
-      false
-    );
+    /*
+     * 正常時は保存画面だけを表示する。
+     * 上部の共通メッセージ欄は使用しない。
+     */
+    document.getElementById('message')
+      .classList.add('hidden');
   } else {
     showUploadFailureMessage(label);
   }
