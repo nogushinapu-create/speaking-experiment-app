@@ -325,12 +325,13 @@
       </ul>
 
       <button
-        id="prepareButton"
-        class="primary-button"
-        onclick="startPreparation()"
-      >
-        準備を開始する
-      </button>
+  id="prepareButton"
+  class="primary-button"
+  type="button"
+  onclick="startPreparation()"
+>
+  タスクを開始する
+</button>  
     </section>
 
     <!-- 2. 準備画面 -->
@@ -408,14 +409,6 @@
       >
         --
       </div>
-
-      <button
-        id="speakButton"
-        class="primary-button"
-        onclick="startSpeaking()"
-      >
-        発話を開始する
-      </button>
     </aside>
   </div>
 </section>
@@ -490,6 +483,7 @@ window.addEventListener('beforeunload', event => {
     const speakingDuration = 120;
 
     let mediaRecorder;
+    let recordingStream = null;
     let audioChunks = [];
     let countdownInterval;
     let testUploadOk = true;
@@ -632,8 +626,7 @@ if (isDone(statusValue)) {
 
       document.getElementById('speakingTimer').textContent =
         speakingDuration;
-
-      document.getElementById('speakButton').classList.remove('hidden');
+      
       document.getElementById('recordingStatus')
   .classList.add('hidden');
       document.getElementById('downloadConfirmed').checked = false;
@@ -645,48 +638,79 @@ if (isDone(statusValue)) {
       showTestScreen('instructionScreen');
     }
 
-        function startPreparation() {
-          lockExperimentPage();
-      document.getElementById('message').classList.add('hidden');
+        async function startPreparation() {
+  const startButton =
+    document.getElementById('prepareButton');
 
-      showTestScreen('preparationScreen');
-      startPreparationCountdown(preparationDuration);
-    }
+  startButton.disabled = true;
+  startButton.textContent =
+    'マイクを準備しています。しばらくお待ちください。';
+
+  lockExperimentPage();
+
+  document.getElementById('message')
+    .classList.add('hidden');
+
+  try {
+    /*
+     * 準備時間の前にマイクを確保する。
+     * この時点ではまだ録音しない。
+     */
+    recordingStream =
+      await navigator.mediaDevices.getUserMedia({
+        audio: true
+      });
+
+    showTestScreen('preparationScreen');
+    startPreparationCountdown(preparationDuration);
+
+  } catch (error) {
+    startButton.disabled = false;
+    startButton.textContent =
+      'タスクを開始する';
+
+    showErrorScreen(
+      `マイクを使用できませんでした。<br>
+       Error name: ${error.name}<br>
+       Error message: ${error.message}`
+    );
+  }
+}
 
         function startPreparationCountdown(seconds) {
-      let remaining = seconds;
+  const timer =
+    document.getElementById('preparationTimer');
 
-      document.getElementById('preparationTimer').textContent =
-        remaining;
+  const endTime =
+    performance.now() + seconds * 1000;
 
+  timer.textContent = seconds;
+
+  clearInterval(countdownInterval);
+
+  countdownInterval = setInterval(() => {
+    const millisecondsRemaining =
+      endTime - performance.now();
+
+    const remaining =
+      Math.max(
+        0,
+        Math.ceil(millisecondsRemaining / 1000)
+      );
+
+    timer.textContent = remaining;
+
+    if (millisecondsRemaining <= 0) {
       clearInterval(countdownInterval);
+      timer.textContent = 0;
 
-      countdownInterval = setInterval(() => {
-        remaining--;
-
-        document.getElementById('preparationTimer').textContent =
-          Math.max(remaining, 0);
-
-        if (remaining <= 0) {
-          clearInterval(countdownInterval);
-
-          document.getElementById('speakingTimer').textContent =
-            speakingDuration;
-
-          document.getElementById('speakingHeading').textContent =
-  '準備時間が終了しました。発話を開始してください。';
-
-document.getElementById('recordingStatus')
-  .classList.add('hidden');
-
-document.getElementById('speakButton')
-  .classList.remove('hidden');
-
-showTestScreen('speakingScreen');
-        }
-      }, 1000);
+      /*
+       * 準備終了と同時に自動録音開始
+       */
+      startSpeaking();
     }
-
+  }, 100);
+}
     function streamCleanupAfterError() {
   const recordingStatus =
     document.getElementById('recordingStatus');
@@ -696,34 +720,37 @@ showTestScreen('speakingScreen');
   }
 
   clearInterval(countdownInterval);
+
+  if (recordingStream) {
+    recordingStream
+      .getTracks()
+      .forEach(track => track.stop());
+
+    recordingStream = null;
+  }
 }
 
-async function startSpeaking() {
-  const speakButton =
-    document.getElementById('speakButton');
-
+function startSpeaking() {
   const speakingHeading =
     document.getElementById('speakingHeading');
 
   const recordingStatus =
     document.getElementById('recordingStatus');
 
-  speakButton.classList.add('hidden');
-  recordingStatus.classList.add('hidden');
-
-  speakingHeading.textContent =
-    'マイクを準備しています。しばらくお待ちください。';
-
-  document.getElementById('message').classList.add('hidden');
+  if (!recordingStream) {
+    showErrorScreen(
+      '録音用のマイクを取得できていません。'
+    );
+    return;
+  }
 
   try {
-    const stream =
-      await navigator.mediaDevices.getUserMedia({
-        audio: true
-      });
-
     audioChunks = [];
-    mediaRecorder = new MediaRecorder(stream);
+
+    const stream = recordingStream;
+
+    mediaRecorder =
+      new MediaRecorder(stream);
 
     mediaRecorder.ondataavailable = event => {
       if (event.data.size > 0) {
@@ -733,6 +760,10 @@ async function startSpeaking() {
 
     mediaRecorder.onstop = async () => {
       stream.getTracks().forEach(track => track.stop());
+
+      if (recordingStream === stream) {
+        recordingStream = null;
+      }
 
       recordingStatus.classList.add('hidden');
 
@@ -775,16 +806,28 @@ async function startSpeaking() {
         }
       );
 
-      showUploadResultMessage(testUploadOk, phase);
+      showUploadResultMessage(
+        testUploadOk,
+        phase
+      );
     };
 
-    mediaRecorder.start();
+    /*
+     * 発話画面を表示して即座に録音開始
+     */
+    document.getElementById(
+      'speakingTimer'
+    ).textContent =
+      speakingDuration;
 
     speakingHeading.textContent =
-      'イラストを見ながら英語で話してください。';
+      '録音中です。イラストを見ながら英語で話してください。';
 
     recordingStatus.classList.remove('hidden');
 
+    showTestScreen('speakingScreen');
+
+    mediaRecorder.start();
     startSpeakingCountdown(speakingDuration);
 
   } catch (error) {
@@ -798,21 +841,31 @@ async function startSpeaking() {
   }
 }
     function startSpeakingCountdown(seconds) {
-  let remaining = seconds;
+  const timer =
+    document.getElementById('speakingTimer');
 
-  document.getElementById('speakingTimer').textContent =
-    remaining;
+  const endTime =
+    performance.now() + seconds * 1000;
+
+  timer.textContent = seconds;
 
   clearInterval(countdownInterval);
 
   countdownInterval = setInterval(() => {
-    remaining--;
+    const millisecondsRemaining =
+      endTime - performance.now();
 
-    document.getElementById('speakingTimer').textContent =
-      Math.max(remaining, 0);
+    const remaining =
+      Math.max(
+        0,
+        Math.ceil(millisecondsRemaining / 1000)
+      );
 
-    if (remaining <= 0) {
+    timer.textContent = remaining;
+
+    if (millisecondsRemaining <= 0) {
       clearInterval(countdownInterval);
+      timer.textContent = 0;
 
       if (
         mediaRecorder &&
@@ -821,7 +874,7 @@ async function startSpeaking() {
         mediaRecorder.stop();
       }
     }
-  }, 1000);
+  }, 100);
 }
     function handleDownloadConfirmation() {
   const checked = document.getElementById('downloadConfirmed').checked;
