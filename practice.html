@@ -417,7 +417,7 @@ button:disabled {
     <div class="phase-label">Listening</div>
 
     <h2 class="screen-heading">
-      モデル音声を聞いてください
+      このストーリーを英語で説明したモデル音声を聞いてください
     </h2>
 
     <p id="inputTrialInfo"></p>
@@ -428,12 +428,18 @@ button:disabled {
     </p>
 
     <audio
-      id="inputAudioPlayer"
-      controls
-      controlsList="nodownload noplaybackrate"
-      style="width: 100%;"
-    ></audio>
+  id="inputAudioPlayer"
+  preload="auto"
+></audio>
 
+<button
+  id="inputPlayAudioButton"
+  class="primary-button"
+  type="button"
+  onclick="playInputAudioOnce()"
+>
+  音声を再生する
+</button>
     <button
       id="inputNextAudioButton"
       class="primary-button"
@@ -691,7 +697,7 @@ button:disabled {
     <div class="phase-label">Listening</div>
 
     <h2 class="screen-heading">
-      モデル音声を聞いてください
+      このストーリーを英語で説明したモデル音声を聞いてください
     </h2>
 
     <p id="ioModelAudioInfo"></p>
@@ -702,7 +708,19 @@ button:disabled {
     </p>
 
     <audio
-      id="ioModelAudioPlayer"
+      <audio
+  id="ioModelAudioPlayer"
+  preload="auto"
+></audio>
+
+<button
+  id="ioPlayAudioButton"
+  class="primary-button"
+  type="button"
+  onclick="playIOModelAudioOnce()"
+>
+  音声を再生する
+</button>
       controls
       controlsList="nodownload noplaybackrate"
       style="width: 100%;"
@@ -1483,7 +1501,8 @@ async function nextOutputTrial() {
 let inputAudioIndex = 1;
 let inputUploadOk = true;
 let inputAudioCompleted = false;
-
+let inputAudioStarted = false;
+    
 const inputTotalAudios = 5;
 const inputAudioFiles = {
   1: 'input1.mp3',
@@ -1537,7 +1556,13 @@ function renderInputAudio() {
     document.getElementById('inputNextAudioButton');
 
   inputAudioCompleted = false;
+  inputAudioStarted = false;
 
+const playButton =
+  document.getElementById('inputPlayAudioButton');
+
+playButton.disabled = false;
+playButton.textContent = '音声を再生する';
   document.getElementById('inputTrialInfo').textContent =
     `Audio ${inputAudioIndex} / ${inputTotalAudios}`;
 
@@ -1559,14 +1584,20 @@ function renderInputAudio() {
   }
 
   player.onended = () => {
-    inputAudioCompleted = true;
+  inputAudioCompleted = true;
 
-    if (inputAudioIndex < inputTotalAudios) {
-      nextButton.disabled = false;
-    } else {
-      beginInputPreparation();
-    }
-  };
+  const playButton =
+    document.getElementById('inputPlayAudioButton');
+
+  playButton.disabled = true;
+  playButton.textContent = '音声の再生が終了しました';
+
+  if (inputAudioIndex < inputTotalAudios) {
+    nextButton.disabled = false;
+  } else {
+    beginInputPreparation();
+  }
+};
 }
     
 function nextInputAudio() {
@@ -1580,6 +1611,36 @@ function nextInputAudio() {
 
   inputAudioIndex++;
   renderInputAudio();
+}
+
+function playInputAudioOnce() {
+  if (inputAudioStarted || inputAudioCompleted) {
+    return;
+  }
+
+  const player =
+    document.getElementById('inputAudioPlayer');
+
+  const playButton =
+    document.getElementById('inputPlayAudioButton');
+
+  inputAudioStarted = true;
+  playButton.disabled = true;
+  playButton.textContent = '再生中です';
+
+  player.currentTime = 0;
+
+  player.play().catch(error => {
+    inputAudioStarted = false;
+    playButton.disabled = false;
+    playButton.textContent = '音声を再生する';
+
+    showErrorScreen(
+      `モデル音声を再生できませんでした。<br>
+       Error name: ${error.name}<br>
+       Error message: ${error.message}`
+    );
+  });
 }
   
 function beginInputPreparation() {
@@ -1851,6 +1912,7 @@ let ioTrial = 1;
 let ioUploadOk = true;
 let ioModelAudioCompleted = false;
 let ioTransitioning = false;
+let ioModelAudioStarted = false;
 
 const ioTotalTrials = 6;
 const ioPreparationDuration = 60;
@@ -2159,6 +2221,8 @@ function startIOSpeakingCountdown(seconds) {
   }, 100);
 }
 
+
+
 function handleIODownloadConfirmation() {
   const checkbox =
     document.getElementById('ioDownloadConfirmed');
@@ -2181,26 +2245,68 @@ function handleIODownloadConfirmation() {
   }
 }
 
-function showIOModelAudio() {
-  ioModelAudioCompleted = false;
+function playIOModelAudioOnce() {
+  if (ioModelAudioStarted || ioModelAudioCompleted) {
+    return;
+  }
 
   const player =
     document.getElementById('ioModelAudioPlayer');
 
+  const playButton =
+    document.getElementById('ioPlayAudioButton');
+
+  ioModelAudioStarted = true;
+  playButton.disabled = true;
+  playButton.textContent = '再生中です';
+
+  player.currentTime = 0;
+
+  player.play().catch(error => {
+    ioModelAudioStarted = false;
+    playButton.disabled = false;
+    playButton.textContent = '音声を再生する';
+
+    showErrorScreen(
+      `モデル音声を再生できませんでした。<br>
+       Error name: ${error.name}<br>
+       Error message: ${error.message}`
+    );
+  });
+}
+
+function showIOModelAudio() {
+  ioModelAudioCompleted = false;
+  ioModelAudioStarted = false;
+
+  const player =
+    document.getElementById('ioModelAudioPlayer');
+
+  const playButton =
+    document.getElementById('ioPlayAudioButton');
+
+  playButton.disabled = false;
+  playButton.textContent = '音声を再生する';
+
   document.getElementById(
     'ioModelAudioInfo'
   ).textContent =
-    `Trial ${ioTrial}のモデル音声を聞いてください。音声終了後、自動的にTrial ${ioTrial + 1}へ進みます。`;
+    `Trial ${ioTrial}のこのストーリーを英語で説明したモデル音声を聞いてください。音声終了後、自動的にTrial ${ioTrial + 1}へ進みます。`;
 
   player.pause();
   player.src = ioAudioFiles[ioTrial];
   player.currentTime = 0;
   player.load();
 
-  player.onended = () => {
-    ioModelAudioCompleted = true;
-    finishIOAudio();
-  };
+ player.onended = () => {
+  ioModelAudioCompleted = true;
+
+  playButton.disabled = true;
+  playButton.textContent =
+    '音声の再生が終了しました';
+
+  finishIOAudio();
+};
 
   player.onerror = () => {
     cleanupIORecording();
