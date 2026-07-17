@@ -474,6 +474,62 @@ function hideAllPracticeAreas() {
   };
 }
 
+/*
+ * Output-only Practice
+ */
+
+let outputTrial = 1;
+let outputUploadOk = true;
+
+const outputTotalTrials = 6;
+const outputPreparationDuration = 60;
+
+const outputSpeakingDurations = {
+  1: 120,
+  2: 120,
+  3: 90,
+  4: 90,
+  5: 90,
+  6: 90
+};
+
+let outputMediaRecorder;
+let outputAudioChunks = [];
+let outputCountdownInterval;
+
+function renderOutputTrial() {
+  const speakingDuration =
+    outputSpeakingDurations[outputTrial];
+
+  document.getElementById('outputTrialInfo').innerHTML =
+    `Trial ${outputTrial} / ${outputTotalTrials}<br>
+     準備時間：${outputPreparationDuration}秒<br>
+     発話時間：${speakingDuration}秒`;
+
+  document.getElementById('outputTimer').textContent =
+    outputPreparationDuration;
+
+  document.getElementById('outputStartButton')
+    .classList.remove('hidden');
+
+  document.getElementById('outputSpeakButton')
+    .classList.add('hidden');
+
+  document.getElementById('outputNextButton')
+    .classList.add('hidden');
+
+  document.getElementById('outputNextButton').disabled =
+    true;
+
+  document.getElementById('outputDownloadArea')
+    .classList.add('hidden');
+
+  document.getElementById('outputDownloadConfirmed').checked =
+    false;
+
+  outputUploadOk = true;
+}
+
 function startOutputPreparation() {
   document.getElementById('outputStartButton').classList.add('hidden');
 
