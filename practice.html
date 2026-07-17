@@ -275,7 +275,6 @@ button:disabled {
 
     <h2 id="outputPreparationHeading" class="screen-heading">
   英語でどのようにストーリーを説明するか、頭の中で準備してください。
-  指定された英文(One day, a woman...)から始め、番号の順に説明してください。
 </h2>
     <p id="outputTrialInfo"></p>
 
@@ -288,15 +287,20 @@ button:disabled {
       >
 
       <aside class="task-sidebar">
-        <p class="timer-label">準備時間</p>
+  <p class="timer-label">準備時間</p>
 
-        <div
-          id="outputPreparationTimer"
-          class="timer-display"
-        >
-          --
-        </div>
-      </aside>
+  <div
+    id="outputPreparationTimer"
+    class="timer-display"
+  >
+    --
+  </div>
+
+  <p>
+    イラスト内に示された英文（One day, a woman...）から始め、
+    番号の順に説明してください。
+  </p>
+</aside>
     </div>
   </section>
 
@@ -450,7 +454,6 @@ button:disabled {
 
   <h2 id="inputPreparationHeading" class="screen-heading">
   英語でどのようにストーリーを説明するか、頭の中で準備してください。
-  指定された英文(One day, a woman...)から始め、番号の順に説明してください。
 </h2>
 
   <div class="task-layout">
@@ -462,15 +465,20 @@ button:disabled {
     >
 
     <aside class="task-sidebar">
-      <p class="timer-label">準備時間</p>
+  <p class="timer-label">準備時間</p>
 
-      <div
-        id="inputPreparationTimer"
-        class="timer-display"
-      >
-        --
-      </div>
-    </aside>
+  <div
+    id="inputPreparationTimer"
+    class="timer-display"
+  >
+    --
+  </div>
+
+  <p>
+    イラスト内に示された英文（One day, a woman...）から始め、
+    番号の順に説明してください。
+  </p>
+</aside>
   </div>
 </section>
 
@@ -573,7 +581,6 @@ button:disabled {
 
     <h2 id="ioPreparationHeading" class="screen-heading">
   英語でどのようにストーリーを説明するか、頭の中で準備してください。
-  指定された英文(One day, a woman...)から始め、番号の順に説明してください。
 </h2>
     <p id="ioTrialInfo"></p>
 
@@ -586,12 +593,17 @@ button:disabled {
       >
 
       <aside class="task-sidebar">
-        <p class="timer-label">準備時間</p>
+  <p class="timer-label">準備時間</p>
 
-        <div id="ioPreparationTimer" class="timer-display">
-          --
-        </div>    
-      </aside>
+  <div id="ioPreparationTimer" class="timer-display">
+    --
+  </div>
+
+  <p>
+    イラスト内に示された英文（One day, a woman...）から始め、
+    番号の順に説明してください。
+  </p>
+</aside>
     </div>
   </section>
 
@@ -1172,10 +1184,10 @@ async function renderOutputTrial() {
     'イラストを見て、話す内容を準備してください。';
 
  document.getElementById(
-  'inputPreparationHeading'
+  'outputPreparationHeading'
 ).textContent =
-  '英語でどのようにストーリーを説明するか、頭の中で準備してください。指定された英文から始め、番号の順に説明してください。';
-
+  '英語でどのようにストーリーを説明するか、頭の中で準備してください。';
+  
   document.getElementById(
     'outputRecordingStatus'
   ).classList.add('hidden');
@@ -1605,10 +1617,10 @@ function beginInputPreparation() {
   ).textContent =
     inputSpeakingDuration;
 
-  document.getElementById(
+ document.getElementById(
   'inputPreparationHeading'
 ).textContent =
-  '英語でどのようにストーリーを説明するか、頭の中で準備してください。指定された英文から始め、番号の順に説明してください。';
+  '英語でどのようにストーリーを説明するか、頭の中で準備してください。';
   document.getElementById(
     'inputSpeakingHeading'
   ).textContent =
@@ -1940,7 +1952,7 @@ function renderIOTrial() {
   document.getElementById(
   'ioPreparationHeading'
 ).textContent =
-  '英語でどのようにストーリーを説明するか、頭の中で準備してください。指定された英文から始め、番号の順に説明してください。';
+  '英語でどのようにストーリーを説明するか、頭の中で準備してください。';
   
   document.getElementById(
     'ioSpeakingHeading'
