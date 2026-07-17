@@ -767,6 +767,28 @@ button:disabled {
 
     let participant = null;
 
+    /*
+ * 実験中のページ離脱防止
+ */
+let experimentInProgress = false;
+
+function lockExperimentPage() {
+  experimentInProgress = true;
+}
+
+function unlockExperimentPage() {
+  experimentInProgress = false;
+}
+
+window.addEventListener('beforeunload', event => {
+  if (!experimentInProgress) {
+    return;
+  }
+
+  event.preventDefault();
+  event.returnValue = '';
+});
+
     async function loadParticipant() {
       const subjectId = document.getElementById('subjectId').value.trim();
 
@@ -874,6 +896,7 @@ function hideAllPracticeAreas() {
     'Trial 1を開始する';
 
   startButton.onclick = () => {
+    lockExperimentPage();
     document.getElementById('conditionArea')
       .classList.add('hidden');
 
@@ -911,6 +934,7 @@ function hideAllPracticeAreas() {
     '音声聴取を開始する';
 
   startButton.onclick = () => {
+    lockExperimentPage();
   document.getElementById('conditionArea')
     .classList.add('hidden');
 
@@ -953,6 +977,7 @@ function hideAllPracticeAreas() {
     'Trial 1を開始する';
 
   startButton.onclick = () => {
+    lockExperimentPage();
     document.getElementById('conditionArea')
       .classList.add('hidden');
 
@@ -2038,6 +2063,7 @@ function blobToBase64(blob) {
 } 
 
     function showCompleteScreen() {
+      unlockExperimentPage();
   document.getElementById('loginArea')?.classList.add('hidden');
   document.getElementById('participantArea')?.classList.add('hidden');
   document.getElementById('conditionArea')?.classList.add('hidden');
