@@ -420,17 +420,48 @@ button:disabled {
     </button>
   </section>
 
-</div>
-<div id="inputPracticeArea" class="box hidden">
-  <h2>Input-only Practice</h2>
+</div><div id="inputPracticeArea" class="hidden">
 
-  <p id="inputTrialInfo"></p>
+  <!-- 音声聴取画面 -->
+  <section
+    id="inputListeningScreen"
+    class="test-screen"
+  >
+    <div class="phase-label">Listening</div>
 
-  <audio id="inputAudioPlayer" controls style="width:100%;"></audio>
+    <h2 class="screen-heading">
+      モデル音声を聞いてください
+    </h2>
 
-  <button id="inputNextAudioButton" onclick="nextInputAudio()">次の音声へ</button>
+    <p id="inputTrialInfo"></p>
 
-  <div id="inputSpeakingArea" class="hidden">
+    <p>
+      音声を最後まで注意して聞いてください。
+      音声が終了すると、次へ進めます。
+    </p>
+
+    <audio
+      id="inputAudioPlayer"
+      controls
+      controlsList="nodownload noplaybackrate"
+      style="width: 100%;"
+    ></audio>
+
+    <button
+      id="inputNextAudioButton"
+      class="primary-button"
+      type="button"
+      onclick="nextInputAudio()"
+      disabled
+    >
+      次の音声へ
+    </button>
+  </section>
+
+  <div
+    id="inputSpeakingArea"
+    class="test-screen hidden"
+  >
     <p>音声の聴取が完了しました。準備時間の後、英語で話してください。</p>
 
     <img id="inputStimulus" src="stimulus-output.png" alt="stimulus image">
@@ -639,15 +670,23 @@ function hideAllPracticeAreas() {
     '音声聴取を開始する';
 
   startButton.onclick = () => {
-    document.getElementById('conditionArea')
-      .classList.add('hidden');
+  document.getElementById('conditionArea')
+    .classList.add('hidden');
 
-    document.getElementById('inputPracticeArea')
-      .classList.remove('hidden');
+  document.getElementById('inputPracticeArea')
+    .classList.remove('hidden');
 
-    renderInputAudio();
-  };
-}
+  document.getElementById('inputListeningScreen')
+    .classList.remove('hidden');
+
+  document.getElementById('inputSpeakingArea')
+    .classList.add('hidden');
+
+  inputAudioIndex = 1;
+  inputAudioCompleted = false;
+
+  renderInputAudio();
+};
     function showInputOutputIntro() {
   hideAllPracticeAreas();
 
@@ -995,8 +1034,9 @@ function nextOutputTrial() {
 
 let inputAudioIndex = 1;
 let inputUploadOk = true;
-const inputTotalAudios = 5;
+let inputAudioCompleted = false;
 
+const inputTotalAudios = 5;
 const inputAudioFiles = {
   1: 'input1.mp3',
   2: 'input2.mp3',
@@ -1013,31 +1053,62 @@ let inputAudioChunks = [];
 let inputCountdownInterval;
 
 function renderInputAudio() {
-  document.getElementById('inputTrialInfo').innerHTML =
+  const player =
+    document.getElementById('inputAudioPlayer');
+
+  const nextButton =
+    document.getElementById('inputNextAudioButton');
+
+  inputAudioCompleted = false;
+
+  document.getElementById('inputTrialInfo').textContent =
     `Audio ${inputAudioIndex} / ${inputTotalAudios}`;
 
-  const player = document.getElementById('inputAudioPlayer');
+  player.pause();
   player.src = inputAudioFiles[inputAudioIndex];
+  player.currentTime = 0;
+  player.load();
+
+  nextButton.disabled = true;
 
   if (inputAudioIndex < inputTotalAudios) {
-    document.getElementById('inputNextAudioButton').textContent = '次の音声へ';
+    nextButton.textContent =
+      '次の音声へ';
   } else {
-    document.getElementById('inputNextAudioButton').textContent = '発話準備へ進む';
+    nextButton.textContent =
+      '発話準備へ進む';
   }
-}
 
+  player.onended = () => {
+    inputAudioCompleted = true;
+    nextButton.disabled = false;
+  };
+}
 function nextInputAudio() {
+  if (!inputAudioCompleted) {
+    return;
+  }
+
   if (inputAudioIndex < inputTotalAudios) {
     inputAudioIndex++;
     renderInputAudio();
-  } else {
-    document.getElementById('inputAudioPlayer').classList.add('hidden');
-    document.getElementById('inputNextAudioButton').classList.add('hidden');
-    document.getElementById('inputSpeakingArea').classList.remove('hidden');
-    document.getElementById('inputTimer').textContent = inputPreparationDuration;
+    return;
   }
-}
 
+  document.getElementById('inputListeningScreen')
+    .classList.add('hidden');
+
+  document.getElementById('inputSpeakingArea')
+    .classList.remove('hidden');
+
+  document.getElementById('inputTimer').textContent =
+    inputPreparationDuration;
+
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth'
+  });
+}
 function startInputPreparation() {
   document.getElementById('inputStartButton').classList.add('hidden');
 
