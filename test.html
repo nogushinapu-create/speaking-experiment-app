@@ -467,6 +467,24 @@
     const API_URL = 'https://script.google.com/macros/s/AKfycbztMQANbJ8k7BSChLs6hplaDRa5GOhJlIJc3hX2gb23gZm0THn0yzSFH2jOkfB-huDq/exec';
 
     let participant = null;
+    let experimentInProgress = false;
+
+function lockExperimentPage() {
+  experimentInProgress = true;
+}
+
+function unlockExperimentPage() {
+  experimentInProgress = false;
+}
+
+window.addEventListener('beforeunload', event => {
+  if (!experimentInProgress) {
+    return;
+  }
+
+  event.preventDefault();
+  event.returnValue = '';
+});
     let phase = '';
     let preparationDuration = 120;
     const speakingDuration = 120;
@@ -628,6 +646,7 @@ if (isDone(statusValue)) {
     }
 
         function startPreparation() {
+          lockExperimentPage();
       document.getElementById('message').classList.add('hidden');
 
       showTestScreen('preparationScreen');
@@ -928,6 +947,7 @@ function showUploadResultMessage(uploadOk, label) {
 }
 
     function showCompleteScreen() {
+      unlockExperimentPage();
   document.getElementById('loginArea')?.classList.add('hidden');
   document.getElementById('testArea')?.classList.add('hidden');
   document.getElementById('message')?.classList.add('hidden');
