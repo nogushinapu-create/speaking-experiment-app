@@ -133,6 +133,94 @@ button:disabled {
 .primary-button:hover {
   background: #174a82;
 }
+
+.task-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: 24px;
+  align-items: center;
+}
+
+.task-sidebar {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+}
+
+.stimulus-image {
+  display: block;
+  width: 100%;
+  max-height: 68vh;
+  object-fit: contain;
+  border: 1px solid #ccc;
+  background: white;
+}
+
+.timer-label {
+  margin: 0;
+  text-align: center;
+  font-weight: bold;
+}
+
+.timer-display {
+  margin: 4px 0 24px;
+  font-size: 56px;
+  font-weight: bold;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.recording-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  color: #c5161d;
+  font-weight: bold;
+}
+
+.recording-indicator {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #d71920;
+  color: white;
+  font-size: 30px;
+  animation: recordingPulse 1.2s infinite;
+}
+
+.recording-text {
+  font-size: 20px;
+}
+
+@keyframes recordingPulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(215, 25, 32, 0.5);
+  }
+
+  50% {
+    opacity: 0.6;
+    transform: scale(0.94);
+    box-shadow: 0 0 0 14px rgba(215, 25, 32, 0);
+  }
+}
+
+@media (max-width: 850px) {
+  .task-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .stimulus-image {
+    max-height: 58vh;
+  }
+}
     
   </style>
 </head>
@@ -176,39 +264,163 @@ button:disabled {
     Practiceを開始する
   </button>
 </section>
-<div id="outputPracticeArea" class="box hidden">
-  <h2>Output-only Practice</h2>
+<div id="outputPracticeArea" class="hidden">
 
-  <p id="outputTrialInfo"></p>
+  <!-- 準備画面 -->
+  <section
+    id="outputPreparationScreen"
+    class="test-screen hidden"
+  >
+    <div class="phase-label">準備</div>
 
-  <img id="outputStimulus" src="stimulus-output.png" alt="stimulus image">
+    <h2 id="outputPreparationHeading" class="screen-heading">
+      イラストを見て、話す内容を準備してください
+    </h2>
 
-  <div id="outputTimer">--</div>
+    <p id="outputTrialInfo"></p>
 
-  <button id="outputStartButton" onclick="startOutputPreparation()">準備を開始する</button>
-  <button id="outputSpeakButton" class="hidden" onclick="startOutputSpeaking()">発話を開始する</button>
-  <button id="outputNextButton" class="hidden" onclick="nextOutputTrial()" disabled>次の試行へ</button>
+    <div class="task-layout">
+      <img
+        id="outputPreparationStimulus"
+        class="stimulus-image"
+        src="stimulus-output.png"
+        alt="Speaking practice illustration"
+      >
 
-  <div id="outputDownloadArea" class="box hidden">
-    <p>録音が完了しました。以下から保存してください。</p>
+      <aside class="task-sidebar">
+        <p class="timer-label">準備時間</p>
 
-    <audio id="outputAudioPlayback" controls style="width:100%;"></audio>
+        <div
+          id="outputPreparationTimer"
+          class="timer-display"
+        >
+          --
+        </div>
 
-    <br><br>
+        <button
+          id="outputStartButton"
+          class="primary-button"
+          type="button"
+          onclick="startOutputPreparation()"
+        >
+          準備を開始する
+        </button>
+      </aside>
+    </div>
+  </section>
 
-    <a id="outputDownloadLink">録音ファイルをダウンロード</a>
+  <!-- 発話画面 -->
+  <section
+    id="outputSpeakingScreen"
+    class="test-screen hidden"
+  >
+    <div class="phase-label">発話</div>
+
+    <h2 id="outputSpeakingHeading" class="screen-heading">
+      準備時間が終了しました。発話を開始してください。
+    </h2>
+
+    <p id="outputSpeakingTrialInfo"></p>
+
+    <div class="task-layout">
+      <img
+        id="outputSpeakingStimulus"
+        class="stimulus-image"
+        src="stimulus-output.png"
+        alt="Speaking practice illustration"
+      >
+
+      <aside class="task-sidebar">
+        <div
+          id="outputRecordingStatus"
+          class="recording-status hidden"
+          role="status"
+          aria-live="polite"
+        >
+          <div
+            class="recording-indicator"
+            aria-hidden="true"
+          >
+            🎙
+          </div>
+
+          <span class="recording-text">録音中</span>
+        </div>
+
+        <p class="timer-label">発話時間</p>
+
+        <div
+          id="outputSpeakingTimer"
+          class="timer-display"
+        >
+          --
+        </div>
+
+        <button
+          id="outputSpeakButton"
+          class="primary-button"
+          type="button"
+          onclick="startOutputSpeaking()"
+        >
+          発話を開始する
+        </button>
+      </aside>
+    </div>
+  </section>
+
+  <!-- 保存画面 -->
+  <section
+    id="outputResultScreen"
+    class="test-screen hidden"
+  >
+    <div class="phase-label">録音完了</div>
+
+    <h2 class="screen-heading">
+      録音ファイルを保存してください
+    </h2>
+
+    <p id="outputResultTrialInfo"></p>
+
+    <p>
+      録音内容を確認し、ファイルをラップトップにも保存してください。
+    </p>
+
+    <audio
+      id="outputAudioPlayback"
+      controls
+      style="width: 100%;"
+    ></audio>
+
+    <p>
+      <a id="outputDownloadLink">
+        録音ファイルをダウンロード
+      </a>
+    </p>
 
     <div class="check-row">
-      <input type="checkbox" id="outputDownloadConfirmed" onchange="handleOutputDownloadConfirmation()">
-      <label for="outputDownloadConfirmed">録音ファイルを保存しました</label>
+      <input
+        type="checkbox"
+        id="outputDownloadConfirmed"
+        onchange="handleOutputDownloadConfirmation()"
+      >
+
+      <label for="outputDownloadConfirmed">
+        録音ファイルを保存しました
+      </label>
     </div>
 
-    <p style="font-size: 14px;">
-      ※ファイルを保存した後、チェックを入れると次の試行へ進めます。
-    </p>
-  </div>
-</div>
+    <button
+      id="outputNextButton"
+      class="primary-button hidden"
+      type="button"
+      onclick="nextOutputTrial()"
+      disabled
+    >
+      次のTrialへ
+    </button>
+  </section>
 
+</div>
 <div id="inputPracticeArea" class="box hidden">
   <h2>Input-only Practice</h2>
 
@@ -497,6 +709,39 @@ let outputMediaRecorder;
 let outputAudioChunks = [];
 let outputCountdownInterval;
 
+let outputMediaRecorder;
+let outputAudioChunks = [];
+let outputCountdownInterval;
+
+/*
+ * Output-onlyの画面切替
+ */
+const outputScreenIds = [
+  'outputPreparationScreen',
+  'outputSpeakingScreen',
+  'outputResultScreen'
+];
+
+function showOutputScreen(screenId) {
+  outputScreenIds.forEach(id => {
+    const screen = document.getElementById(id);
+
+    if (screen) {
+      screen.classList.toggle(
+        'hidden',
+        id !== screenId
+      );
+    }
+  });
+
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth'
+  });
+}
+
+function renderOutputTrial() {    
+    
 function renderOutputTrial() {
   const speakingDuration =
     outputSpeakingDurations[outputTrial];
@@ -506,64 +751,125 @@ function renderOutputTrial() {
      準備時間：${outputPreparationDuration}秒<br>
      発話時間：${speakingDuration}秒`;
 
-  document.getElementById('outputTimer').textContent =
+  document.getElementById(
+    'outputSpeakingTrialInfo'
+  ).textContent =
+    `Trial ${outputTrial} / ${outputTotalTrials}`;
+
+  document.getElementById(
+    'outputResultTrialInfo'
+  ).textContent =
+    `Trial ${outputTrial} / ${outputTotalTrials}`;
+
+  document.getElementById(
+    'outputPreparationTimer'
+  ).textContent =
     outputPreparationDuration;
 
-  document.getElementById('outputStartButton')
-    .classList.remove('hidden');
+  document.getElementById(
+    'outputSpeakingTimer'
+  ).textContent =
+    speakingDuration;
 
-  document.getElementById('outputSpeakButton')
-    .classList.add('hidden');
+  document.getElementById(
+    'outputPreparationHeading'
+  ).textContent =
+    'イラストを見て、話す内容を準備してください';
 
-  document.getElementById('outputNextButton')
-    .classList.add('hidden');
+  document.getElementById(
+    'outputSpeakingHeading'
+  ).textContent =
+    '準備時間が終了しました。発話を開始してください。';
 
-  document.getElementById('outputNextButton').disabled =
-    true;
+  document.getElementById(
+    'outputStartButton'
+  ).classList.remove('hidden');
 
-  document.getElementById('outputDownloadArea')
-    .classList.add('hidden');
+  document.getElementById(
+    'outputSpeakButton'
+  ).classList.remove('hidden');
 
-  document.getElementById('outputDownloadConfirmed').checked =
-    false;
+  document.getElementById(
+    'outputRecordingStatus'
+  ).classList.add('hidden');
+
+  document.getElementById(
+    'outputNextButton'
+  ).classList.add('hidden');
+
+  document.getElementById(
+    'outputNextButton'
+  ).disabled = true;
+
+  document.getElementById(
+    'outputDownloadConfirmed'
+  ).checked = false;
 
   outputUploadOk = true;
-}
 
+  showOutputScreen('outputPreparationScreen');
+}
 function startOutputPreparation() {
-  document.getElementById('outputStartButton').classList.add('hidden');
+  document.getElementById(
+    'outputStartButton'
+  ).classList.add('hidden');
 
-  showMessage(
-    `Trial ${outputTrial} の準備時間です。画像を見て、話す内容を考えてください。`,
-    false
+  document.getElementById(
+    'outputPreparationHeading'
+  ).textContent =
+    '準備中です。英語で話す内容を考えてください。';
+
+  document.getElementById('message')
+    .classList.add('hidden');
+
+  startOutputPreparationCountdown(
+    outputPreparationDuration
   );
-
-  startOutputPreparationCountdown(outputPreparationDuration);
 }
-
 function startOutputPreparationCountdown(seconds) {
   let remaining = seconds;
-  document.getElementById('outputTimer').textContent = remaining;
+
+  const timer =
+    document.getElementById('outputPreparationTimer');
+
+  timer.textContent = remaining;
 
   clearInterval(outputCountdownInterval);
 
   outputCountdownInterval = setInterval(() => {
     remaining--;
-    document.getElementById('outputTimer').textContent = remaining;
+    timer.textContent = Math.max(remaining, 0);
 
     if (remaining <= 0) {
       clearInterval(outputCountdownInterval);
-      document.getElementById('outputTimer').textContent = outputSpeakingDurations[outputTrial];
-      document.getElementById('outputSpeakButton').classList.remove('hidden');
-      showMessage(`Trial ${outputTrial} の準備時間が終了しました。「発話を開始する」を押すと録音が始まります。`, false);
+
+      document.getElementById(
+        'outputSpeakingTimer'
+      ).textContent =
+        outputSpeakingDurations[outputTrial];
+
+      showOutputScreen('outputSpeakingScreen');
     }
   }, 1000);
 }
-
 async function startOutputSpeaking() {
-  const duration = outputSpeakingDurations[outputTrial];
+  const duration =
+    outputSpeakingDurations[outputTrial];
 
-  showMessage(`Trial ${outputTrial} の発話録音を開始しました。`, false);
+  const speakButton =
+    document.getElementById('outputSpeakButton');
+
+  const speakingHeading =
+    document.getElementById('outputSpeakingHeading');
+
+  const recordingStatus =
+    document.getElementById('outputRecordingStatus');
+
+  speakButton.classList.add('hidden');
+  recordingStatus.classList.add('hidden');
+
+  speakingHeading.textContent =
+    'マイクを準備しています。しばらくお待ちください。';
 
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -579,7 +885,7 @@ async function startOutputSpeaking() {
 
     outputMediaRecorder.onstop = async () => {
       stream.getTracks().forEach(track => track.stop());
-
+      recordingStatus.classList.add('hidden');
       const audioBlob = new Blob(outputAudioChunks, { type: 'audio/webm' });
       const audioUrl = URL.createObjectURL(audioBlob);
 
@@ -600,8 +906,7 @@ async function startOutputSpeaking() {
       downloadLink.download = fileName;
       downloadLink.textContent = `${fileName} をダウンロード`;
 
-      document.getElementById('outputDownloadArea').classList.remove('hidden');
-
+     showOutputScreen('outputResultScreen');
       if (outputTrial < outputTotalTrials) {
         document.getElementById('outputNextButton').classList.remove('hidden');
         document.getElementById('outputNextButton').disabled = true;
@@ -615,8 +920,13 @@ async function startOutputSpeaking() {
     };
 
     outputMediaRecorder.start();
-    startOutputSpeakingCountdown(duration);
 
+speakingHeading.textContent =
+  'イラストを見ながら英語で話してください。';
+
+recordingStatus.classList.remove('hidden');
+
+startOutputSpeakingCountdown(duration);
   } catch (error) {
     showErrorScreen(
   `録音に失敗しました。<br>
@@ -628,24 +938,30 @@ async function startOutputSpeaking() {
 
 function startOutputSpeakingCountdown(seconds) {
   let remaining = seconds;
-  document.getElementById('outputTimer').textContent = remaining;
+
+  const timer =
+    document.getElementById('outputSpeakingTimer');
+
+  timer.textContent = remaining;
 
   clearInterval(outputCountdownInterval);
 
   outputCountdownInterval = setInterval(() => {
     remaining--;
-    document.getElementById('outputTimer').textContent = remaining;
+    timer.textContent = Math.max(remaining, 0);
 
     if (remaining <= 0) {
       clearInterval(outputCountdownInterval);
 
-      if (outputMediaRecorder && outputMediaRecorder.state !== 'inactive') {
+      if (
+        outputMediaRecorder &&
+        outputMediaRecorder.state !== 'inactive'
+      ) {
         outputMediaRecorder.stop();
       }
     }
   }, 1000);
 }
-
 function handleOutputDownloadConfirmation() {
   const checked = document.getElementById('outputDownloadConfirmed').checked;
 
