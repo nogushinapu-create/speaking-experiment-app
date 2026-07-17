@@ -313,16 +313,39 @@
       <p id="participantDisplay"></p>
 
       <p>
-        これから、イラストの内容について英語で話すタスクを行います。
-      </p>
+  このタスクでは、表示されるイラストを見て英語で説明していただきます。
+  イラストを見たことがない人にも内容が伝わるように説明してください。
+</p>
 
-      <ul class="instruction-list">
-        <li id="preparationInstruction"></li>
-        <li id="speakingInstruction"></li>
-        <li>準備中と発話中は、イラストを確認できます。</li>
-        <li>発話は自動的に録音されます。</li>
-        <li>録音中はブラウザを閉じたり、別のページへ移動したりしないでください。</li>
-      </ul>
+<ul class="instruction-list">
+  <li>
+    イラストの番号の順に、出来事の流れが分かるように話してください。
+  </li>
+
+  <li id="openingSentenceInstruction" class="hidden">
+  ストーリーは、必ずイラスト内の指示にあるように、指定された英文を読み上げることから始めてください。
+</li>
+  <li id="preparationInstruction"></li>
+  <li id="speakingInstruction"></li>
+
+  <li>
+    準備中と発話中は、イラストを確認できます。
+  </li>
+
+  <li>
+    発話は自動的に録音されます。
+  </li>
+
+  <li>
+    準備中と発話中は、辞書、翻訳サービス、生成AIなどで単語や表現を調べたり、
+    紙やパソコンにメモを取ったりすることはできません。
+    すべて頭の中で考えてください。
+  </li>
+
+  <li>
+    録音中はブラウザを閉じたり、別のページへ移動したりしないでください。
+  </li>
+</ul>
 
       <button
   id="prepareButton"
@@ -339,9 +362,9 @@
   <div class="phase-label">準備</div>
 
   <h2 class="screen-heading">
-    イラストを見て、話す内容を準備してください
-  </h2>
-
+  英語でどのようにストーリーを説明するか、頭の中で準備してください
+</h2>
+      
   <div class="task-layout">
     <img
       id="preparationStimulus"
@@ -360,9 +383,9 @@
         --
       </div>
 
-      <p>
-        イラストの内容について、英語で話す内容を考えてください。
-      </p>
+      <p id="preparationOpeningReminder" class="hidden">
+  イラスト内に示された英文から始め、番号の順に説明してください。
+</p>
     </aside>
   </div>
 </section>
@@ -373,9 +396,8 @@
   <div class="phase-label">発話</div>
 
   <h2 id="speakingHeading" class="screen-heading">
-    イラストを見ながら英語で話してください
-  </h2>
-
+  番号の順にストーリーを英語で説明してください
+</h2>
   <div class="task-layout">
     <img
       id="speakingStimulus"
@@ -613,11 +635,24 @@ if (isDone(statusValue)) {
         `Subject ID：${participant.SubjectID}`;
 
       document.getElementById('preparationInstruction').textContent =
-        `イラストを見ながら、${preparationDuration}秒間で話す内容を準備してください。`;
+  `準備時間は${preparationDuration}秒です。頭の中で話す内容を準備してください。`;
 
-      document.getElementById('speakingInstruction').textContent =
-        `準備終了後、イラストについて英語で${speakingDuration}秒間話してください。`;
+document.getElementById('speakingInstruction').textContent =
+  `発話時間は${speakingDuration}秒です。時間内で、聞き手にストーリーの内容が十分に伝わるように話してください。`;
 
+document.getElementById(
+  'openingSentenceInstruction'
+).classList.toggle(
+  'hidden',
+  phase !== 'delayed'
+);
+
+document.getElementById(
+  'preparationOpeningReminder'
+).classList.toggle(
+  'hidden',
+  phase !== 'delayed'
+);
       document.getElementById('preparationStimulus').src = imageFile;
       document.getElementById('speakingStimulus').src = imageFile;
 
@@ -820,9 +855,13 @@ function startSpeaking() {
     ).textContent =
       speakingDuration;
 
-    speakingHeading.textContent =
-      '録音中です。イラストを見ながら英語で話してください。';
-
+    if (phase === 'delayed') {
+  speakingHeading.textContent =
+    '録音中です。指定された英文から始め、番号の順にストーリーを英語で説明してください。';
+} else {
+  speakingHeading.textContent =
+    '録音中です。番号の順にストーリーを英語で説明してください。';
+}
     recordingStatus.classList.remove('hidden');
 
     showTestScreen('speakingScreen');
