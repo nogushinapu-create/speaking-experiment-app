@@ -598,36 +598,168 @@ button:disabled {
 </section>
  </div>
 
-  <div id="inputOutputPracticeArea" class="box hidden">
-  <h2>Input+output Practice</h2>
+  <div id="inputOutputPracticeArea" class="hidden">
 
-  <p id="ioTrialInfo"></p>
+  <!-- 準備画面 -->
+  <section id="ioPreparationScreen" class="test-screen hidden">
+    <div class="phase-label">準備</div>
 
-  <img id="ioStimulus" src="stimulus-output.png" alt="stimulus image">
+    <h2 id="ioPreparationHeading" class="screen-heading">
+      イラストを見て、話す内容を準備してください
+    </h2>
 
-  <div id="ioTimer">--</div>
+    <p id="ioTrialInfo"></p>
 
-  <button id="ioStartButton" onclick="startIOPreparation()">準備を開始する</button>
-  <button id="ioSpeakButton" class="hidden" onclick="startIOSpeaking()">発話を開始する</button>
-  <button id="ioNextButton" class="hidden" onclick="nextIOTrial()" disabled>次の試行へ</button>
+    <div class="task-layout">
+      <img
+        id="ioPreparationStimulus"
+        class="stimulus-image"
+        src="stimulus-output.png"
+        alt="Speaking practice illustration"
+      >
 
-  <div id="ioDownloadArea" class="box hidden">
-    <p>録音が完了しました。以下から保存してください。</p>
-    <audio id="ioAudioPlayback" controls style="width:100%;"></audio>
-    <br><br>
-    <a id="ioDownloadLink">録音ファイルをダウンロード</a>
+      <aside class="task-sidebar">
+        <p class="timer-label">準備時間</p>
+
+        <div id="ioPreparationTimer" class="timer-display">
+          --
+        </div>
+
+        <button
+          id="ioStartButton"
+          class="primary-button"
+          type="button"
+          onclick="startIOPreparation()"
+        >
+          準備を開始する
+        </button>
+      </aside>
+    </div>
+  </section>
+
+  <!-- 発話画面 -->
+  <section id="ioSpeakingScreen" class="test-screen hidden">
+    <div class="phase-label">発話</div>
+
+    <h2 id="ioSpeakingHeading" class="screen-heading">
+      準備時間が終了しました。発話を開始してください。
+    </h2>
+
+    <p id="ioSpeakingTrialInfo"></p>
+
+    <div class="task-layout">
+      <img
+        id="ioSpeakingStimulus"
+        class="stimulus-image"
+        src="stimulus-output.png"
+        alt="Speaking practice illustration"
+      >
+
+      <aside class="task-sidebar">
+        <div
+          id="ioRecordingStatus"
+          class="recording-status hidden"
+          role="status"
+          aria-live="polite"
+        >
+          <div class="recording-indicator" aria-hidden="true">
+            🎙
+          </div>
+
+          <span class="recording-text">録音中</span>
+        </div>
+
+        <p class="timer-label">発話時間</p>
+
+        <div id="ioSpeakingTimer" class="timer-display">
+          --
+        </div>
+
+        <button
+          id="ioSpeakButton"
+          class="primary-button"
+          type="button"
+          onclick="startIOSpeaking()"
+        >
+          発話を開始する
+        </button>
+      </aside>
+    </div>
+  </section>
+
+  <!-- 保存画面 -->
+  <section id="ioResultScreen" class="test-screen hidden">
+    <div class="phase-label">録音完了</div>
+
+    <h2 class="screen-heading">
+      録音ファイルを保存してください
+    </h2>
+
+    <p id="ioResultTrialInfo"></p>
+
+    <p id="ioUploadStatus">
+      録音ファイルを処理しています。
+    </p>
+
+    <audio
+      id="ioAudioPlayback"
+      controls
+      style="width: 100%;"
+    ></audio>
+
+    <p>
+      <a id="ioDownloadLink">
+        録音ファイルをダウンロード
+      </a>
+    </p>
 
     <div class="check-row">
-      <input type="checkbox" id="ioDownloadConfirmed" onchange="handleIODownloadConfirmation()">
-      <label for="ioDownloadConfirmed">録音ファイルを保存しました</label>
-    </div>
-  </div>
+      <input
+        type="checkbox"
+        id="ioDownloadConfirmed"
+        onchange="handleIODownloadConfirmation()"
+        disabled
+      >
 
-  <div id="ioModelAudioArea" class="box hidden">
+      <label for="ioDownloadConfirmed">
+        録音ファイルを保存しました
+      </label>
+    </div>
+  </section>
+
+  <!-- モデル音声画面 -->
+  <section id="ioListeningScreen" class="test-screen hidden">
+    <div class="phase-label">Listening</div>
+
+    <h2 class="screen-heading">
+      モデル音声を聞いてください
+    </h2>
+
     <p id="ioModelAudioInfo"></p>
-    <audio id="ioModelAudioPlayer" controls style="width:100%;"></audio>
-    <button id="ioAfterAudioButton" onclick="finishIOAudio()">音声を聞き終えました</button>
-  </div>
+
+    <p>
+      音声を最後まで注意して聞いてください。
+    </p>
+
+    <audio
+      id="ioModelAudioPlayer"
+      controls
+      controlsList="nodownload noplaybackrate"
+      style="width: 100%;"
+    ></audio>
+
+    <button
+      id="ioAfterAudioButton"
+      class="primary-button"
+      type="button"
+      onclick="finishIOAudio()"
+      disabled
+    >
+      次のTrialへ
+    </button>
+  </section>
+
+</div>
 </div>
 
   <script>
@@ -1449,8 +1581,14 @@ function handleInputDownloadConfirmation() {
     showCompleteScreen();
   }
 }
+/*
+ * Input + Output Practice
+ */
+
 let ioTrial = 1;
 let ioUploadOk = true;
+let ioModelAudioCompleted = false;
+
 const ioTotalTrials = 6;
 const ioPreparationDuration = 60;
 
@@ -1475,69 +1613,163 @@ let ioMediaRecorder;
 let ioAudioChunks = [];
 let ioCountdownInterval;
 
+const ioScreenIds = [
+  'ioPreparationScreen',
+  'ioSpeakingScreen',
+  'ioResultScreen',
+  'ioListeningScreen'
+];
+
+function showIOScreen(screenId) {
+  ioScreenIds.forEach(id => {
+    const screen = document.getElementById(id);
+
+    if (screen) {
+      screen.classList.toggle(
+        'hidden',
+        id !== screenId
+      );
+    }
+  });
+
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth'
+  });
+}
+
 function renderIOTrial() {
-  const speakingDuration = ioSpeakingDurations[ioTrial];
+  const speakingDuration =
+    ioSpeakingDurations[ioTrial];
 
   document.getElementById('ioTrialInfo').innerHTML =
     `Trial ${ioTrial} / ${ioTotalTrials}<br>
      準備時間：${ioPreparationDuration}秒<br>
      発話時間：${speakingDuration}秒`;
 
-  document.getElementById('ioTimer').textContent = ioPreparationDuration;
+  document.getElementById(
+    'ioSpeakingTrialInfo'
+  ).textContent =
+    `Trial ${ioTrial} / ${ioTotalTrials}`;
 
-  document.getElementById('ioStartButton').classList.remove('hidden');
-  document.getElementById('ioSpeakButton').classList.add('hidden');
-  document.getElementById('ioNextButton').classList.add('hidden');
-  document.getElementById('ioNextButton').disabled = true;
+  document.getElementById(
+    'ioResultTrialInfo'
+  ).textContent =
+    `Trial ${ioTrial} / ${ioTotalTrials}`;
 
-  document.getElementById('ioDownloadArea').classList.add('hidden');
-  document.getElementById('ioModelAudioArea').classList.add('hidden');
-  document.getElementById('ioDownloadConfirmed').checked = false;
+  document.getElementById(
+    'ioPreparationTimer'
+  ).textContent =
+    ioPreparationDuration;
+
+  document.getElementById(
+    'ioSpeakingTimer'
+  ).textContent =
+    speakingDuration;
+
+  document.getElementById(
+    'ioPreparationHeading'
+  ).textContent =
+    'イラストを見て、話す内容を準備してください';
+
+  document.getElementById(
+    'ioSpeakingHeading'
+  ).textContent =
+    '準備時間が終了しました。発話を開始してください。';
+
+  document.getElementById(
+    'ioStartButton'
+  ).classList.remove('hidden');
+
+  document.getElementById(
+    'ioSpeakButton'
+  ).classList.remove('hidden');
+
+  document.getElementById(
+    'ioRecordingStatus'
+  ).classList.add('hidden');
+
+  const checkbox =
+    document.getElementById('ioDownloadConfirmed');
+
+  checkbox.checked = false;
+  checkbox.disabled = true;
+
+  ioUploadOk = true;
+  ioModelAudioCompleted = false;
+
+  showIOScreen('ioPreparationScreen');
 }
 
 function startIOPreparation() {
-  document.getElementById('ioStartButton').classList.add('hidden');
+  document.getElementById(
+    'ioStartButton'
+  ).classList.add('hidden');
 
-  showMessage(
-    `Trial ${ioTrial} の準備時間です。画像を見て、話す内容を考えてください。`,
-    false
+  document.getElementById(
+    'ioPreparationHeading'
+  ).textContent =
+    '準備中です。英語で話す内容を考えてください。';
+
+  document.getElementById('message')
+    .classList.add('hidden');
+
+  startIOPreparationCountdown(
+    ioPreparationDuration
   );
-
-  startIOPreparationCountdown(ioPreparationDuration);
 }
 
 function startIOPreparationCountdown(seconds) {
   let remaining = seconds;
-  document.getElementById('ioTimer').textContent = remaining;
+
+  const timer =
+    document.getElementById('ioPreparationTimer');
+
+  timer.textContent = remaining;
 
   clearInterval(ioCountdownInterval);
 
   ioCountdownInterval = setInterval(() => {
     remaining--;
-    document.getElementById('ioTimer').textContent = remaining;
+    timer.textContent = Math.max(remaining, 0);
 
     if (remaining <= 0) {
       clearInterval(ioCountdownInterval);
-      document.getElementById('ioTimer').textContent = ioSpeakingDurations[ioTrial];
-      document.getElementById('ioSpeakButton').classList.remove('hidden');
 
-      showMessage(
-        `Trial ${ioTrial} の準備時間が終了しました。「発話を開始する」を押すと録音が始まります。`,
-        false
-      );
+      document.getElementById(
+        'ioSpeakingTimer'
+      ).textContent =
+        ioSpeakingDurations[ioTrial];
+
+      showIOScreen('ioSpeakingScreen');
     }
   }, 1000);
 }
 
 async function startIOSpeaking() {
-  const duration = ioSpeakingDurations[ioTrial];
+  const duration =
+    ioSpeakingDurations[ioTrial];
 
-  document.getElementById('ioSpeakButton').classList.add('hidden');
+  const speakButton =
+    document.getElementById('ioSpeakButton');
 
-  showMessage(`Trial ${ioTrial} の発話録音を開始しました。`, false);
+  const speakingHeading =
+    document.getElementById('ioSpeakingHeading');
+
+  const recordingStatus =
+    document.getElementById('ioRecordingStatus');
+
+  speakButton.classList.add('hidden');
+  recordingStatus.classList.add('hidden');
+
+  speakingHeading.textContent =
+    'マイクを準備しています。しばらくお待ちください。';
 
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const stream =
+      await navigator.mediaDevices.getUserMedia({
+        audio: true
+      });
 
     ioAudioChunks = [];
     ioMediaRecorder = new MediaRecorder(stream);
@@ -1551,35 +1783,74 @@ async function startIOSpeaking() {
     ioMediaRecorder.onstop = async () => {
       stream.getTracks().forEach(track => track.stop());
 
-      const audioBlob = new Blob(ioAudioChunks, { type: 'audio/webm' });
-      const audioUrl = URL.createObjectURL(audioBlob);
+      recordingStatus.classList.add('hidden');
+
+      const audioBlob = new Blob(
+        ioAudioChunks,
+        { type: 'audio/webm' }
+      );
+
+      const audioUrl =
+        URL.createObjectURL(audioBlob);
 
       const fileName =
         `${participant.SubjectID}_practice_inputoutput_trial${ioTrial}_${duration}s.webm`;
 
-      document.getElementById('ioAudioPlayback').src = audioUrl;
+      document.getElementById('ioAudioPlayback').src =
+        audioUrl;
 
-    ioUploadOk = await uploadAudioToDrive(audioBlob, {
-  phase: 'practice_inputoutput',
-  trial: ioTrial,
-  duration: duration,
-  fileName: fileName
-});
+      const downloadLink =
+        document.getElementById('ioDownloadLink');
 
-      const downloadLink = document.getElementById('ioDownloadLink');
       downloadLink.href = audioUrl;
       downloadLink.download = fileName;
-      downloadLink.textContent = `${fileName} をダウンロード`;
+      downloadLink.textContent =
+        `${fileName} をダウンロード`;
 
-      document.getElementById('ioDownloadArea').classList.remove('hidden');
+      const uploadStatus =
+        document.getElementById('ioUploadStatus');
 
-      showUploadResultMessage(ioUploadOk, `Trial ${ioTrial}`);
+      uploadStatus.textContent =
+        '録音ファイルをGoogle Driveへ送信しています。';
+
+      showIOScreen('ioResultScreen');
+
+      ioUploadOk = await uploadAudioToDrive(
+        audioBlob,
+        {
+          phase: 'practice_inputoutput',
+          trial: ioTrial,
+          duration: duration,
+          fileName: fileName
+        }
+      );
+
+      if (ioUploadOk) {
+        uploadStatus.textContent =
+          'Google Driveへの送信処理が完了しました。録音ファイルをラップトップにも保存してください。';
+
+        document.getElementById(
+          'ioDownloadConfirmed'
+        ).disabled = false;
+      } else {
+        uploadStatus.textContent =
+          'Google Driveへ送信できませんでした。ファイルをラップトップに保存し、研究者へ連絡してください。';
+      }
     };
 
     ioMediaRecorder.start();
+
+    speakingHeading.textContent =
+      'イラストを見ながら英語で話してください。';
+
+    recordingStatus.classList.remove('hidden');
+
     startIOSpeakingCountdown(duration);
 
   } catch (error) {
+    recordingStatus.classList.add('hidden');
+    clearInterval(ioCountdownInterval);
+
     showErrorScreen(
       `録音に失敗しました。<br>
        Error name: ${error.name}<br>
@@ -1590,18 +1861,25 @@ async function startIOSpeaking() {
 
 function startIOSpeakingCountdown(seconds) {
   let remaining = seconds;
-  document.getElementById('ioTimer').textContent = remaining;
+
+  const timer =
+    document.getElementById('ioSpeakingTimer');
+
+  timer.textContent = remaining;
 
   clearInterval(ioCountdownInterval);
 
   ioCountdownInterval = setInterval(() => {
     remaining--;
-    document.getElementById('ioTimer').textContent = remaining;
+    timer.textContent = Math.max(remaining, 0);
 
     if (remaining <= 0) {
       clearInterval(ioCountdownInterval);
 
-      if (ioMediaRecorder && ioMediaRecorder.state !== 'inactive') {
+      if (
+        ioMediaRecorder &&
+        ioMediaRecorder.state !== 'inactive'
+      ) {
         ioMediaRecorder.stop();
       }
     }
@@ -1609,63 +1887,66 @@ function startIOSpeakingCountdown(seconds) {
 }
 
 function handleIODownloadConfirmation() {
-  const checked = document.getElementById('ioDownloadConfirmed').checked;
-  if (!ioUploadOk) {
-  showUploadFailureMessage(`Trial ${ioTrial}`);
-  document.getElementById('ioDownloadConfirmed').checked = false;
-  return;
-}
+  const checkbox =
+    document.getElementById('ioDownloadConfirmed');
 
-  if (!checked) {
-    document.getElementById('ioNextButton').disabled = true;
+  if (!checkbox.checked) {
     return;
   }
 
-  if (ioTrial <= 5) {
+  if (!ioUploadOk) {
+    checkbox.checked = false;
+    return;
+  }
+
+  if (ioTrial < ioTotalTrials) {
     showIOModelAudio();
   } else {
     updateParticipantStatus('PracticeStatus');
-    showMessage(
-      'Input+output Practice が完了しました。全ての録音ファイルが保存されていることを確認してください。',
-      false
-    );
     showCompleteScreen();
   }
 }
 
 function showIOModelAudio() {
-  document.getElementById('ioModelAudioArea').classList.remove('hidden');
+  ioModelAudioCompleted = false;
 
-  document.getElementById('ioModelAudioInfo').innerHTML =
-    `Trial ${ioTrial} のモデル音声を聞いてください。`;
+  const player =
+    document.getElementById('ioModelAudioPlayer');
 
-  const player = document.getElementById('ioModelAudioPlayer');
+  const nextButton =
+    document.getElementById('ioAfterAudioButton');
+
+  document.getElementById(
+    'ioModelAudioInfo'
+  ).textContent =
+    `Trial ${ioTrial}のモデル音声を聞いてください。`;
+
+  player.pause();
   player.src = ioAudioFiles[ioTrial];
+  player.currentTime = 0;
+  player.load();
 
-  showMessage(
-    `録音保存を確認しました。次にTrial ${ioTrial} のモデル音声を聞いてください。`,
-    false
-  );
+  nextButton.disabled = true;
+  nextButton.textContent =
+    `Trial ${ioTrial + 1}へ進む`;
+
+  player.onended = () => {
+    ioModelAudioCompleted = true;
+    nextButton.disabled = false;
+  };
+
+  showIOScreen('ioListeningScreen');
 }
 
 function finishIOAudio() {
-  if (ioTrial < ioTotalTrials) {
-    document.getElementById('ioNextButton').classList.remove('hidden');
-    document.getElementById('ioNextButton').disabled = false;
-
-    showMessage(
-      `音声聴取が完了しました。次の試行へ進んでください。`,
-      false
-    );
+  if (!ioModelAudioCompleted) {
+    return;
   }
-}
 
-function nextIOTrial() {
   ioTrial++;
   renderIOTrial();
 }
-
-async function updateParticipantStatus(statusType) {
+  async function updateParticipantStatus(statusType) {
   try {
     const url =
       `${API_URL}?action=updateStatus&subjectId=${encodeURIComponent(participant.SubjectID)}&statusType=${encodeURIComponent(statusType)}&value=DONE`;
