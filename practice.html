@@ -1153,10 +1153,8 @@ async function renderOutputTrial() {
   const speakingDuration =
     outputSpeakingDurations[outputTrial];
 
-  document.getElementById('outputTrialInfo').innerHTML =
-    `Trial ${outputTrial} / ${outputTotalTrials}<br>
-     準備時間：${outputPreparationDuration}秒<br>
-     発話時間：${speakingDuration}秒`;
+  document.getElementById('outputTrialInfo').textContent =
+  `Trial ${outputTrial} / ${outputTotalTrials}`;
 
   document.getElementById(
     'outputSpeakingTrialInfo'
