@@ -1,1 +1,1081 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Speaking Test</title>
+  <style>
+    body {
+  font-family: Arial, sans-serif;
+  max-width: 1120px;
+  margin: 24px auto;
+  padding: 20px;
+  line-height: 1.6;
+  background: #f7f8fa;
+}
+    input, button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 12px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
 
+    button {
+      cursor: pointer;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
+    .box {
+      margin-top: 20px;
+      padding: 16px;
+      border: 1px solid #ccc;
+    }
+
+    .error {
+      border-color: red;
+      color: red;
+    }
+
+    .hidden {
+  display: none !important;
+}
+
+    #stimulus {
+      width: 100%;
+      max-height: 460px;
+      object-fit: contain;
+      border: 1px solid #ccc;
+      margin-top: 20px;
+    }
+
+    #timer {
+      font-size: 56px;
+      font-weight: bold;
+      text-align: center;
+      margin: 24px 0;
+    }
+
+    .check-row {
+      margin-top: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .check-row input {
+      width: auto;
+      margin-top: 0;
+    }
+        .test-screen {
+      margin-top: 20px;
+      padding: 24px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .screen-heading {
+      margin-top: 0;
+      margin-bottom: 16px;
+    }
+
+    .phase-label {
+      display: inline-block;
+      margin-bottom: 12px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: #eef2f7;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .instruction-list {
+      padding-left: 24px;
+    }
+
+    .instruction-list li {
+      margin-bottom: 8px;
+    }
+
+    .stimulus-image {
+      display: block;
+      width: 100%;
+      max-width: 960px;
+      max-height: 62vh;
+      margin: 20px auto;
+      object-fit: contain;
+      border: 1px solid #ccc;
+    }
+
+    .timer-label {
+      margin-top: 20px;
+      margin-bottom: 0;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .timer-display {
+      margin: 4px 0 24px;
+      font-size: 56px;
+      font-weight: bold;
+      line-height: 1.2;
+      text-align: center;
+    }
+
+    .primary-button {
+      background: #1f5fa8;
+      color: white;
+      border: none;
+      border-radius: 6px;
+    }
+
+    .primary-button:hover {
+      background: #174a82;
+    }
+        .recording-status {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      margin: 16px auto 20px;
+      font-weight: bold;
+      color: #c5161d;
+    }
+
+    .recording-indicator {
+      width: 64px;
+      height: 64px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: #d71920;
+      color: white;
+      font-size: 30px;
+      line-height: 1;
+      box-shadow: 0 0 0 0 rgba(215, 25, 32, 0.5);
+      animation: recordingPulse 1.2s infinite;
+    }
+
+    .recording-text {
+      font-size: 20px;
+      letter-spacing: 0.04em;
+    }
+
+    @keyframes recordingPulse {
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(215, 25, 32, 0.5);
+      }
+
+      50% {
+        opacity: 0.6;
+        transform: scale(0.94);
+        box-shadow: 0 0 0 14px rgba(215, 25, 32, 0);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .recording-indicator {
+        animation: none;
+      }
+    }
+        .recording-status.hidden {
+      display: none;
+    }
+        .upload-status {
+      margin: 20px 0;
+      padding: 14px 16px;
+      border: 1px solid;
+      border-radius: 6px;
+      font-weight: bold;
+    }
+
+    .upload-pending {
+      border-color: #d6a100;
+      background: #fff8dc;
+      color: #735800;
+    }
+
+    .upload-success {
+      border-color: #24823b;
+      background: #edf8f0;
+      color: #17652c;
+    }
+
+    .upload-error {
+      border-color: #c5161d;
+      background: #fff0f0;
+      color: #a20f15;
+    }
+
+        #loginArea,
+    #instructionScreen,
+    #resultScreen,
+    #completeArea,
+    #message {
+      max-width: 820px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    #preparationScreen,
+    #speakingScreen {
+      max-width: 1080px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .task-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 220px;
+      gap: 24px;
+      align-items: center;
+    }
+
+    .task-sidebar {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: stretch;
+    }
+
+    .task-sidebar .timer-label {
+      margin-top: 0;
+    }
+
+    .task-sidebar .timer-display {
+      margin-bottom: 24px;
+    }
+
+    .stimulus-image {
+      width: 100%;
+      max-width: none;
+      max-height: 68vh;
+      margin: 0 auto;
+      object-fit: contain;
+      background: white;
+    }
+
+    @media (max-width: 850px) {
+      body {
+        margin: 12px auto;
+        padding: 12px;
+      }
+
+      .task-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .task-sidebar {
+        max-width: 100%;
+      }
+
+      .stimulus-image {
+        max-height: 58vh;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Speaking Test</h1>
+
+  <div id="loginArea">
+    <p>Please enter your Subject ID.</p>
+    <input type="text" id="subjectId" placeholder="例：1001">
+    <button onclick="loadParticipant()">開始</button>
+  </div>
+
+  <div id="message" class="box hidden"></div>
+  <div id="completeArea" class="box hidden">
+  <h2>Completed</h2>
+  <p>
+    Your recording has been saved.<br>
+    Thank you for your participation.<br><br>
+    You may now close this page.
+  </p>
+</div>
+
+  <main id="testArea" class="hidden">
+
+    <!-- 1. 指示画面 -->
+    <section id="instructionScreen" class="test-screen">
+      <div id="instructionPhaseLabel" class="phase-label"></div>
+
+      <h2 id="testTitle" class="screen-heading"></h2>
+
+      <p id="participantDisplay"></p>
+
+      <p>
+  In this task, you will tell a story in English based on a sequence of six pictures.
+  Describe the story so that someone who has not seen the pictures can understand
+  what happened.
+</p>
+
+<ul class="instruction-list">
+  <li>
+  Follow the numbered sequence and make the order and relationships between
+  the events clear.
+</li>
+
+  <li>
+  You may interpret unclear details in any reasonable way.
+</li>
+
+
+  <li id="openingSentenceInstruction" class="hidden">
+  ストーリーは、必ずイラスト内の指示にあるように、指定された英文を読み上げることから始めてください。
+</li>
+  <li id="preparationInstruction"></li>
+  <li id="speakingInstruction"></li>
+
+  <li>
+  The pictures will remain visible during both preparation and speaking.
+</li>
+
+  <li>
+  Your response will be recorded automatically.
+</li>
+
+  <li>
+  During preparation and speaking, do not use dictionaries, translation services,
+  generative AI, or any other external resources. Do not take notes on paper or
+  on your computer.
+</li>
+  <li>
+  Do not close the browser, switch tabs, or leave this page during the task.
+</li>
+</ul>
+
+      <button
+  id="prepareButton"
+  class="primary-button"
+  type="button"
+  onclick="startPreparation()"
+>
+  Start the task
+</button>  
+    </section>
+
+    <!-- 2. 準備画面 -->
+    <section id="preparationScreen" class="test-screen hidden">
+  <div class="phase-label">Preparation</div>
+
+  <h2 class="screen-heading">
+  Prepare how you will tell the story in English.
+</h2>
+      
+  <div class="task-layout">
+    <img
+      id="preparationStimulus"
+      class="stimulus-image"
+      src=""
+      alt="Speaking task illustration"
+    >
+
+    <aside class="task-sidebar">
+      <p class="timer-label">Preparation time remaining</p>
+
+      <div
+        id="preparationTimer"
+        class="timer-display"
+      >
+        --
+      </div>
+
+      <p id="preparationOpeningReminder" class="hidden">
+  イラスト内に示された英文(One day, a woman...)から始め、番号の順に説明してください。
+</p>
+    </aside>
+  </div>
+</section>
+    <!-- 3. 発話画面 -->
+    <section id="speakingScreen" class="test-screen hidden">
+  <div class="phase-label">Speaking</div>
+
+  <h2 id="speakingHeading" class="screen-heading">
+  Tell the story in English following the numbered sequence.
+</h2>
+  <div class="task-layout">
+    <img
+      id="speakingStimulus"
+      class="stimulus-image"
+      src=""
+      alt="Speaking task illustration"
+    >
+
+    <aside class="task-sidebar">
+      <div
+        id="recordingStatus"
+        class="recording-status hidden"
+        role="status"
+        aria-live="polite"
+      >
+        <div
+          class="recording-indicator"
+          aria-hidden="true"
+        >
+          🎙
+        </div>
+
+        <span class="recording-text">Recording</span>
+      </div>
+
+      <p class="timer-label">Speaking time remaining</p>
+
+      <div
+        id="speakingTimer"
+        class="timer-display"
+      >
+        --
+      </div>
+    </aside>
+  </div>
+</section>
+    <!-- 4. 保存確認画面 -->
+    <section id="resultScreen" class="test-screen hidden">
+      <div class="phase-label">Recording completed</div>
+
+      <h2 class="screen-heading">Save your recording</h2>
+
+      <p>
+       Your recording has been completed. Please check the audio below and
+  download a copy to your computer.
+      </p>
+
+    　 <div
+        id="uploadStatus"
+        class="upload-status upload-pending"
+        role="status"
+        aria-live="polite"
+      >
+        Your recording is being processed.
+      </div>
+
+      <audio
+        id="audioPlayback"
+        controls
+        style="width: 100%;"
+      ></audio>
+
+      <p>
+        <a id="downloadLink">録音ファイルをダウンロード</a>
+      </p>
+
+      <div class="check-row">
+        <input
+          type="checkbox"
+          id="downloadConfirmed"
+          onchange="handleDownloadConfirmation()"
+        >
+        <label for="downloadConfirmed">
+          I have saved the recording to my computer
+        </label>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    const API_URL = 'https://script.google.com/macros/s/AKfycbztMQANbJ8k7BSChLs6hplaDRa5GOhJlIJc3hX2gb23gZm0THn0yzSFH2jOkfB-huDq/exec';
+
+    let participant = null;
+    let experimentInProgress = false;
+
+function lockExperimentPage() {
+  experimentInProgress = true;
+}
+
+function unlockExperimentPage() {
+  experimentInProgress = false;
+}
+
+window.addEventListener('beforeunload', event => {
+  if (!experimentInProgress) {
+    return;
+  }
+
+  event.preventDefault();
+  event.returnValue = '';
+});
+    let phase = '';
+    let preparationDuration = 120;
+    const speakingDuration = 120;
+
+    let mediaRecorder;
+    let recordingStream = null;
+    let audioChunks = [];
+    let countdownInterval;
+    let testUploadOk = true;
+
+        const testScreenIds = [
+      'instructionScreen',
+      'preparationScreen',
+      'speakingScreen',
+      'resultScreen'
+    ];
+
+    function showTestScreen(screenId) {
+      testScreenIds.forEach(id => {
+        const screen = document.getElementById(id);
+
+        if (screen) {
+          screen.classList.toggle('hidden', id !== screenId);
+        }
+      });
+
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
+
+    function getPhaseFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('phase') || '';
+    }
+
+    async function loadParticipant() {
+      const subjectId = document.getElementById('subjectId').value.trim();
+
+      if (!subjectId) {
+        showMessage('Please enter your Subject ID.', true);
+        return;
+      }
+
+      phase = getPhaseFromUrl();
+
+      if (!['pre', 'post', 'delayed'].includes(phase)) {
+        showMessage('URLに phase が指定されていません。例：test.html?phase=pre', true);
+        return;
+      }
+
+      showMessage('Loading participant information...', false);
+
+      try {
+        const url =
+          `${API_URL}?action=getParticipant&subjectId=${encodeURIComponent(subjectId)}`;
+
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.error) {
+          showMessage(`Error: ${data.error}`, true);
+          return;
+        }
+
+        participant = data;
+
+        setupTest();
+
+      } catch (error) {
+        showMessage(
+          `Failed to load participant information.<br>
+           Error: ${error.message}`,
+          true
+        );
+      }
+    }
+
+    function setupTest() {
+      let taskName = '';
+      let imageFile = '';
+      let title = '';
+      let statusValue = '';
+
+if (phase === 'pre') {
+  statusValue = participant.PreStatus;
+} else if (phase === 'post') {
+  statusValue = participant.PostStatus;
+} else if (phase === 'delayed') {
+  statusValue = participant.DelayedStatus;
+}
+
+if (isDone(statusValue)) {
+  document.getElementById('loginArea').classList.add('hidden');
+
+  showMessage(
+    `This test has already been completed.<br>
+   If you opened this page by mistake, please close it.`,
+    true
+  );
+
+  return;
+}
+
+      if (phase === 'pre') {
+        taskName = participant.PreTask;
+        imageFile = `${taskName}.png`;
+        title = 'Pre-test';
+        preparationDuration = 120;
+      } else if (phase === 'post') {
+        taskName = participant.PostTask;
+        imageFile = `${taskName}.png`;
+        title = 'Post-test';
+        preparationDuration = 120;
+      } else if (phase === 'delayed') {
+        taskName = 'delayed';
+        imageFile = 'stimulus-output.png';
+        title = 'Delayed post-test';
+        preparationDuration = 60;
+      }
+
+      document.getElementById('loginArea').classList.add('hidden');
+      document.getElementById('message').classList.add('hidden');
+      document.getElementById('testArea').classList.remove('hidden');
+
+      document.getElementById('testTitle').textContent = title;
+
+      document.getElementById('instructionPhaseLabel').textContent =
+        title;
+
+      document.getElementById('participantDisplay').textContent =
+        `Subject ID：${participant.SubjectID}`;
+
+      document.getElementById('preparationInstruction').textContent =
+  `You will have ${preparationDuration} seconds to prepare what you will say.`;
+
+document.getElementById('speakingInstruction').textContent =
+  `You will have up to ${speakingDuration} seconds to speak. Try to communicate the story clearly to the listener.`;
+
+document.getElementById(
+  'openingSentenceInstruction'
+).classList.toggle(
+  'hidden',
+  phase !== 'delayed'
+);
+
+document.getElementById(
+  'preparationOpeningReminder'
+).classList.toggle(
+  'hidden',
+  phase !== 'delayed'
+);
+      document.getElementById('preparationStimulus').src = imageFile;
+      document.getElementById('speakingStimulus').src = imageFile;
+
+      document.getElementById('preparationTimer').textContent =
+        preparationDuration;
+
+      document.getElementById('speakingTimer').textContent =
+        speakingDuration;
+      
+      document.getElementById('recordingStatus')
+  .classList.add('hidden');
+      document.getElementById('downloadConfirmed').checked = false;
+      setUploadStatus(
+  'pending',
+  'Your recording is being processed.'
+);
+
+      showTestScreen('instructionScreen');
+    }
+
+        async function startPreparation() {
+  const startButton =
+    document.getElementById('prepareButton');
+
+  startButton.disabled = true;
+  startButton.textContent =
+  'Preparing the microphone. Please wait...';
+
+  lockExperimentPage();
+
+  document.getElementById('message')
+    .classList.add('hidden');
+
+  try {
+    /*
+     * 準備時間の前にマイクを確保する。
+     * この時点ではまだ録音しない。
+     */
+    recordingStream =
+      await navigator.mediaDevices.getUserMedia({
+        audio: true
+      });
+
+    showTestScreen('preparationScreen');
+    startPreparationCountdown(preparationDuration);
+
+  } catch (error) {
+    startButton.disabled = false;
+    startButton.textContent =
+  'Start the task';
+
+    showErrorScreen(
+  `The microphone could not be accessed.<br>
+   Error name: ${error.name}<br>
+   Error message: ${error.message}`
+);
+  }
+}
+
+        function startPreparationCountdown(seconds) {
+  const timer =
+    document.getElementById('preparationTimer');
+
+  const endTime =
+    performance.now() + seconds * 1000;
+
+  timer.textContent = seconds;
+
+  clearInterval(countdownInterval);
+
+  countdownInterval = setInterval(() => {
+    const millisecondsRemaining =
+      endTime - performance.now();
+
+    const remaining =
+      Math.max(
+        0,
+        Math.ceil(millisecondsRemaining / 1000)
+      );
+
+    timer.textContent = remaining;
+
+    if (millisecondsRemaining <= 0) {
+      clearInterval(countdownInterval);
+      timer.textContent = 0;
+
+      /*
+       * 準備終了と同時に自動録音開始
+       */
+      startSpeaking();
+    }
+  }, 100);
+}
+    function streamCleanupAfterError() {
+  const recordingStatus =
+    document.getElementById('recordingStatus');
+
+  if (recordingStatus) {
+    recordingStatus.classList.add('hidden');
+  }
+
+  clearInterval(countdownInterval);
+
+  if (recordingStream) {
+    recordingStream
+      .getTracks()
+      .forEach(track => track.stop());
+
+    recordingStream = null;
+  }
+}
+
+function startSpeaking() {
+  const speakingHeading =
+    document.getElementById('speakingHeading');
+
+  const recordingStatus =
+    document.getElementById('recordingStatus');
+
+  if (!recordingStream) {
+   showErrorScreen(
+  'The microphone is not available for recording.'
+);
+    return;
+  }
+
+  try {
+    audioChunks = [];
+
+    const stream = recordingStream;
+
+    mediaRecorder =
+      new MediaRecorder(stream);
+
+    mediaRecorder.ondataavailable = event => {
+      if (event.data.size > 0) {
+        audioChunks.push(event.data);
+      }
+    };
+
+    mediaRecorder.onstop = async () => {
+      stream.getTracks().forEach(track => track.stop());
+
+      if (recordingStream === stream) {
+        recordingStream = null;
+      }
+
+      recordingStatus.classList.add('hidden');
+
+      const audioBlob = new Blob(
+        audioChunks,
+        { type: 'audio/webm' }
+      );
+
+      const audioUrl =
+        URL.createObjectURL(audioBlob);
+
+      const fileName =
+        `${participant.SubjectID}_${phase}_test_${speakingDuration}s.webm`;
+
+      document.getElementById('audioPlayback').src =
+        audioUrl;
+
+      const downloadLink =
+        document.getElementById('downloadLink');
+
+      downloadLink.href = audioUrl;
+      downloadLink.download = fileName;
+      downloadLink.textContent =
+  `Download ${fileName}`;
+
+      showTestScreen('resultScreen');
+
+      setUploadStatus(
+  'pending',
+  'Uploading the recording to Google Drive. Please wait...'
+);
+
+      testUploadOk = await uploadAudioToDrive(
+        audioBlob,
+        {
+          phase: phase,
+          trial: 'test',
+          duration: speakingDuration,
+          fileName: fileName
+        }
+      );
+
+      showUploadResultMessage(
+        testUploadOk,
+        phase
+      );
+    };
+
+    /*
+     * 発話画面を表示して即座に録音開始
+     */
+    document.getElementById(
+      'speakingTimer'
+    ).textContent =
+      speakingDuration;
+
+    if (phase === 'delayed') {
+  speakingHeading.textContent =
+    '録音中です。指定された英文から始め、番号の順にストーリーを英語で説明してください。';
+} else {
+  speakingHeading.textContent =
+  'Recording: Tell the story in English following the numbered sequence.';
+}
+    recordingStatus.classList.remove('hidden');
+
+    showTestScreen('speakingScreen');
+
+    mediaRecorder.start();
+    startSpeakingCountdown(speakingDuration);
+
+  } catch (error) {
+    streamCleanupAfterError();
+
+    showErrorScreen(
+  `Recording failed.<br>
+   Error name: ${error.name}<br>
+   Error message: ${error.message}`
+);
+  }
+}
+    function startSpeakingCountdown(seconds) {
+  const timer =
+    document.getElementById('speakingTimer');
+
+  const endTime =
+    performance.now() + seconds * 1000;
+
+  timer.textContent = seconds;
+
+  clearInterval(countdownInterval);
+
+  countdownInterval = setInterval(() => {
+    const millisecondsRemaining =
+      endTime - performance.now();
+
+    const remaining =
+      Math.max(
+        0,
+        Math.ceil(millisecondsRemaining / 1000)
+      );
+
+    timer.textContent = remaining;
+
+    if (millisecondsRemaining <= 0) {
+      clearInterval(countdownInterval);
+      timer.textContent = 0;
+
+      if (
+        mediaRecorder &&
+        mediaRecorder.state !== 'inactive'
+      ) {
+        mediaRecorder.stop();
+      }
+    }
+  }, 100);
+}
+    function handleDownloadConfirmation() {
+  const checked = document.getElementById('downloadConfirmed').checked;
+      if (!testUploadOk) {
+  showUploadFailureMessage(phase);
+  document.getElementById('downloadConfirmed').checked = false;
+  return;
+}
+
+  if (checked) {
+    let statusType = '';
+
+    if (phase === 'pre') {
+      statusType = 'PreStatus';
+    } else if (phase === 'post') {
+      statusType = 'PostStatus';
+    } else if (phase === 'delayed') {
+      statusType = 'DelayedStatus';
+    }
+
+    updateParticipantStatus(statusType);
+
+    showMessage(
+  'The test has been completed. Please make sure that the recording has been saved.',
+  false
+);
+    showCompleteScreen();
+  }
+}
+async function uploadAudioToDrive(audioBlob, metadata) {
+  try {
+    
+    const base64Audio = await blobToBase64(audioBlob);
+
+    const payload = {
+      action: 'uploadAudio',
+      subjectId: participant.SubjectID,
+      condition: participant.Condition || '',
+      phase: metadata.phase,
+      trial: metadata.trial,
+      duration: metadata.duration,
+      fileName: metadata.fileName,
+      mimeType: audioBlob.type || 'audio/webm',
+      base64Audio: base64Audio
+    };
+
+    await fetch(API_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {
+        'Content-Type': 'text/plain'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    return true;
+
+  } catch (error) {
+    console.error('Upload failed:', error);
+    return false;
+  }
+}
+
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onloadend = () => {
+      const base64 = reader.result.split(',')[1];
+      resolve(base64);
+    };
+
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+    async function updateParticipantStatus(statusType) {
+  try {
+    const url =
+      `${API_URL}?action=updateStatus&subjectId=${encodeURIComponent(participant.SubjectID)}&statusType=${encodeURIComponent(statusType)}&value=DONE`;
+
+    const response = await fetch(url);
+    const result = await response.json();
+
+    console.log(result);
+
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+function showUploadFailureMessage(label) {
+ setUploadStatus(
+  'error',
+  `The recording could not be sent to Google Drive. ` +
+  'Please save the recording to your computer and contact the test administrator without closing this page.'
+);
+}
+    function setUploadStatus(type, message) {
+  const uploadStatus =
+    document.getElementById('uploadStatus');
+
+  if (!uploadStatus) {
+    return;
+  }
+
+  uploadStatus.className =
+    `upload-status upload-${type}`;
+
+  uploadStatus.textContent = message;
+}
+      
+function showUploadResultMessage(uploadOk, label) {
+  if (uploadOk) {
+    setUploadStatus(
+  'success',
+  'The recording has been sent to Google Drive. Please also save a copy to your computer.'
+);
+  } else {
+    showUploadFailureMessage(label);
+  }
+}
+    function isDone(value) {
+  return String(value || '').trim().toUpperCase() === 'DONE';
+}
+
+    function showCompleteScreen() {
+      unlockExperimentPage();
+  document.getElementById('loginArea')?.classList.add('hidden');
+  document.getElementById('testArea')?.classList.add('hidden');
+  document.getElementById('message')?.classList.add('hidden');
+
+  document.getElementById('completeArea').classList.remove('hidden');
+}
+    function showErrorScreen(message) {
+  document.getElementById('loginArea')?.classList.add('hidden');
+  document.getElementById('participantArea')?.classList.add('hidden');
+  document.getElementById('conditionArea')?.classList.add('hidden');
+  document.getElementById('outputPracticeArea')?.classList.add('hidden');
+  document.getElementById('inputPracticeArea')?.classList.add('hidden');
+  document.getElementById('inputOutputPracticeArea')?.classList.add('hidden');
+  document.getElementById('testArea')?.classList.add('hidden');
+
+  showMessage(
+  `<strong>An error has occurred.</strong><br><br>
+   ${message}<br><br>
+   Do not close this page. Please contact the test administrator.`,
+  true
+);
+}
+    
+    function showMessage(message, isError) {
+      const box = document.getElementById('message');
+      box.style.display = 'block';
+      box.className = isError ? 'box error' : 'box';
+      box.innerHTML = message;
+    }
+  </script>
+</body>
+</html>
