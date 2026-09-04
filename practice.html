@@ -728,6 +728,62 @@ button:disabled {
   <script>
     const API_URL = 'https://script.google.com/macros/s/AKfycbztMQANbJ8k7BSChLs6hplaDRa5GOhJlIJc3hX2gb23gZm0THn0yzSFH2jOkfB-huDq/exec';
 
+    const modelAudioObjectUrls = {
+  input: null,
+  io: null
+};
+
+async function loadModelAudio(player, playerKey, audioIndex) {
+  const url =
+    `${API_URL}?action=getModelAudio` +
+    `&subjectId=${encodeURIComponent(participant.SubjectID)}` +
+    `&audioIndex=${encodeURIComponent(audioIndex)}`;
+
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(
+      `モデル音声の取得に失敗しました（HTTP ${response.status}）。`
+    );
+  }
+
+  const data = await response.json();
+
+  if (!data.success || !data.base64Audio) {
+    throw new Error(
+      data.error || 'モデル音声データを取得できませんでした。'
+    );
+  }
+
+  const binary = atob(data.base64Audio);
+  const bytes = new Uint8Array(binary.length);
+
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+
+  const audioBlob = new Blob(
+    [bytes],
+    { type: data.mimeType || 'audio/wav' }
+  );
+
+  if (modelAudioObjectUrls[playerKey]) {
+    URL.revokeObjectURL(
+      modelAudioObjectUrls[playerKey]
+    );
+  }
+
+  const objectUrl =
+    URL.createObjectURL(audioBlob);
+
+  modelAudioObjectUrls[playerKey] = objectUrl;
+
+  player.pause();
+  player.src = objectUrl;
+  player.currentTime = 0;
+  player.load();
+}
+
     let participant = null;
 
     /*
@@ -900,7 +956,7 @@ function hideAllPracticeAreas() {
   await renderOutputTrial();
 };
 }
-    function showInputOnlyIntro() {
+ function showInputOnlyIntro() {
   hideAllPracticeAreas();
 
   document.getElementById('conditionTitle').textContent =
@@ -933,7 +989,7 @@ function hideAllPracticeAreas() {
       </li>
 
       <li>
-        発話時間は120秒です。時間内で、聞き手にストーリーの内容が
+        発話時間は90秒です。時間内で、聞き手にストーリーの内容が
         十分に伝わるように話してください。
       </li>
 
@@ -982,10 +1038,11 @@ function hideAllPracticeAreas() {
     inputAudioCompleted = false;
     inputUploadOk = true;
 
-    showInputScreen('inputListeningScreen');
-    renderInputAudio();
+  showInputScreen('inputListeningScreen');
 
-    inputTransitioning = false;
+  await renderInputAudio();
+
+  inputTransitioning = false;
 
   } catch (error) {
     inputTransitioning = false;
@@ -1028,6 +1085,9 @@ function hideAllPracticeAreas() {
 
       <li>全部で6回発話します。</li>
       <li>各回の前に60秒間の準備時間があります。</li>
+
+      <li>Trial 1と2の発話時間は120秒です。</li>
+      <li>Trial 3から6の発話時間は90秒です。</li>
 
       <li>
         各回の発話後に、このストーリーを英語で説明したモデル音声を聞きます。
@@ -1499,16 +1559,9 @@ let inputAudioCompleted = false;
 let inputAudioStarted = false;
     
 const inputTotalAudios = 5;
-const inputAudioFiles = {
-  1: 'input1.mp3',
-  2: 'input2.mp3',
-  3: 'input3.mp3',
-  4: 'input4.mp3',
-  5: 'input5.mp3'
-};
 
 const inputPreparationDuration = 60;
-const inputSpeakingDuration = 120;
+const inputSpeakingDuration = 90;
 
 let inputMediaRecorder;
 let inputRecordingStream = null;
@@ -1543,59 +1596,74 @@ function showInputScreen(screenId) {
   });
 }
      
-function renderInputAudio() {
+async function renderInputAudio() {
   const player =
     document.getElementById('inputAudioPlayer');
 
   const nextButton =
     document.getElementById('inputNextAudioButton');
 
+  const playButton =
+    document.getElementById('inputPlayAudioButton');
+
   inputAudioCompleted = false;
   inputAudioStarted = false;
 
-const playButton =
-  document.getElementById('inputPlayAudioButton');
-
-playButton.disabled = false;
-playButton.textContent = '音声を再生する';
   document.getElementById('inputTrialInfo').textContent =
     `Audio ${inputAudioIndex} / ${inputTotalAudios}`;
 
-  player.pause();
-  player.src = inputAudioFiles[inputAudioIndex];
-  player.currentTime = 0;
-  player.load();
+  playButton.disabled = true;
+  playButton.textContent =
+    'モデル音声を読み込んでいます...';
 
   if (inputAudioIndex < inputTotalAudios) {
     nextButton.classList.remove('hidden');
     nextButton.textContent = '次の音声へ';
     nextButton.disabled = true;
   } else {
-    /*
-     * Audio 5の後はボタン操作なしで準備へ進む。
-     */
     nextButton.classList.add('hidden');
     nextButton.disabled = true;
   }
 
   player.onended = () => {
-  inputAudioCompleted = true;
+    inputAudioCompleted = true;
 
-  const playButton =
-    document.getElementById('inputPlayAudioButton');
+    playButton.disabled = true;
+    playButton.textContent =
+      '音声の再生が終了しました';
 
-  playButton.disabled = true;
-  playButton.textContent = '音声の再生が終了しました';
+    if (inputAudioIndex < inputTotalAudios) {
+      nextButton.disabled = false;
+    } else {
+      beginInputPreparation();
+    }
+  };
 
-  if (inputAudioIndex < inputTotalAudios) {
-    nextButton.disabled = false;
-  } else {
-    beginInputPreparation();
+  player.onerror = () => {
+    showErrorScreen(
+      `Audio ${inputAudioIndex}のモデル音声を再生できませんでした。`
+    );
+  };
+
+  try {
+    await loadModelAudio(
+      player,
+      'input',
+      inputAudioIndex
+    );
+
+    playButton.disabled = false;
+    playButton.textContent = '音声を再生する';
+
+  } catch (error) {
+    showErrorScreen(
+      `Audio ${inputAudioIndex}のモデル音声を取得できませんでした。<br>
+       Error: ${error.message}`
+    );
   }
-};
 }
     
-function nextInputAudio() {
+async function nextInputAudio() {
   if (!inputAudioCompleted) {
     return;
   }
@@ -1605,7 +1673,8 @@ function nextInputAudio() {
   }
 
   inputAudioIndex++;
-  renderInputAudio();
+
+  await renderInputAudio();
 }
 
 function playInputAudioOnce() {
@@ -1921,14 +1990,6 @@ const ioSpeakingDurations = {
   6: 90
 };
 
-const ioAudioFiles = {
-  1: 'input1.mp3',
-  2: 'input2.mp3',
-  3: 'input3.mp3',
-  4: 'input4.mp3',
-  5: 'input5.mp3'
-};
-
 let ioMediaRecorder;
 let ioRecordingStream = null;
 let ioAudioChunks = [];
@@ -2218,7 +2279,7 @@ function startIOSpeakingCountdown(seconds) {
 
 
 
-function handleIODownloadConfirmation() {
+async function handleIODownloadConfirmation() {
   const checkbox =
     document.getElementById('ioDownloadConfirmed');
 
@@ -2232,7 +2293,7 @@ function handleIODownloadConfirmation() {
   }
 
   if (ioTrial < ioTotalTrials) {
-    showIOModelAudio();
+    await showIOModelAudio();
   } else {
     cleanupIORecording();
     updateParticipantStatus('PracticeStatus');
@@ -2270,7 +2331,7 @@ function playIOModelAudioOnce() {
   });
 }
 
-function showIOModelAudio() {
+async function showIOModelAudio() {
   ioModelAudioCompleted = false;
   ioModelAudioStarted = false;
 
@@ -2280,38 +2341,53 @@ function showIOModelAudio() {
   const playButton =
     document.getElementById('ioPlayAudioButton');
 
-  playButton.disabled = false;
-  playButton.textContent = '音声を再生する';
-
   document.getElementById(
     'ioModelAudioInfo'
   ).textContent =
     `Trial ${ioTrial}のこのストーリーを英語で説明したモデル音声を聞いてください。音声終了後、自動的にTrial ${ioTrial + 1}へ進みます。`;
 
-  player.pause();
-  player.src = ioAudioFiles[ioTrial];
-  player.currentTime = 0;
-  player.load();
-
- player.onended = () => {
-  ioModelAudioCompleted = true;
-
   playButton.disabled = true;
   playButton.textContent =
-    '音声の再生が終了しました';
+    'モデル音声を読み込んでいます...';
 
-  finishIOAudio();
-};
+  player.onended = () => {
+    ioModelAudioCompleted = true;
+
+    playButton.disabled = true;
+    playButton.textContent =
+      '音声の再生が終了しました';
+
+    finishIOAudio();
+  };
 
   player.onerror = () => {
     cleanupIORecording();
 
     showErrorScreen(
-      `Trial ${ioTrial}のモデル音声を読み込めませんでした。`
+      `Trial ${ioTrial}のモデル音声を再生できませんでした。`
     );
   };
 
   showIOScreen('ioListeningScreen');
+
+  try {
+    await loadModelAudio(
+      player,
+      'io',
+      ioTrial
+    );
+
+    playButton.disabled = false;
+    playButton.textContent = '音声を再生する';
+
+  } catch (error) {
+    cleanupIORecording();
+
+    showErrorScreen(
+      `Trial ${ioTrial}のモデル音声を取得できませんでした。<br>
+       Error: ${error.message}`
+    );
+  }
 }
 
 function finishIOAudio() {
