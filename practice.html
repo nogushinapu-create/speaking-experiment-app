@@ -733,55 +733,108 @@ button:disabled {
   io: null
 };
 
-async function loadModelAudio(player, playerKey, audioIndex) {
-  const url =
-    `${API_URL}?action=getModelAudio` +
-    `&subjectId=${encodeURIComponent(participant.SubjectID)}` +
-    `&audioIndex=${encodeURIComponent(audioIndex)}`;
+async function loadModelAudio(
+  player,
+  playerKey,
+  audioIndex
+) {
+  const maxAttempts = 3;
+  let lastError = null;
 
-  const response = await fetch(url);
+  for (
+    let attempt = 1;
+    attempt <= maxAttempts;
+    attempt++
+  ) {
+    try {
+      const url =
+        `${API_URL}?action=getModelAudio` +
+        `&subjectId=${encodeURIComponent(
+          participant.SubjectID
+        )}` +
+        `&audioIndex=${encodeURIComponent(
+          audioIndex
+        )}` +
+        `&cacheBust=${Date.now()}`;
 
-  if (!response.ok) {
-    throw new Error(
-      `モデル音声の取得に失敗しました（HTTP ${response.status}）。`
-    );
+      const response = await fetch(url, {
+        method: 'GET',
+        cache: 'no-store'
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `HTTP ${response.status}`
+        );
+      }
+
+      const data = await response.json();
+
+      if (!data.success || !data.base64Audio) {
+        throw new Error(
+          data.error ||
+          'モデル音声データを取得できませんでした。'
+        );
+      }
+
+      const binary = atob(data.base64Audio);
+      const bytes = new Uint8Array(binary.length);
+
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+
+      const audioBlob = new Blob(
+        [bytes],
+        {
+          type: data.mimeType || 'audio/mpeg'
+        }
+      );
+
+      if (modelAudioObjectUrls[playerKey]) {
+        URL.revokeObjectURL(
+          modelAudioObjectUrls[playerKey]
+        );
+      }
+
+      const objectUrl =
+        URL.createObjectURL(audioBlob);
+
+      modelAudioObjectUrls[playerKey] = objectUrl;
+
+      player.pause();
+      player.src = objectUrl;
+      player.currentTime = 0;
+      player.load();
+
+      return;
+
+    } catch (error) {
+      lastError = error;
+
+      console.warn(
+        `モデル音声の取得失敗 ` +
+        `(${attempt}/${maxAttempts})`,
+        {
+          audioIndex,
+          subjectId: participant.SubjectID,
+          error: error.message
+        }
+      );
+
+      if (attempt < maxAttempts) {
+        await new Promise(resolve =>
+          setTimeout(resolve, attempt * 1000)
+        );
+      }
+    }
   }
 
-  const data = await response.json();
-
-  if (!data.success || !data.base64Audio) {
-    throw new Error(
-      data.error || 'モデル音声データを取得できませんでした。'
-    );
-  }
-
-  const binary = atob(data.base64Audio);
-  const bytes = new Uint8Array(binary.length);
-
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-
-  const audioBlob = new Blob(
-    [bytes],
-    { type: data.mimeType || 'audio/wav' }
+  throw new Error(
+    `モデル音声を${maxAttempts}回取得しましたが、` +
+    `読み込めませんでした。` +
+    `最終エラー：${lastError.message}`
   );
-
-  if (modelAudioObjectUrls[playerKey]) {
-    URL.revokeObjectURL(
-      modelAudioObjectUrls[playerKey]
-    );
-  }
-
-  const objectUrl =
-    URL.createObjectURL(audioBlob);
-
-  modelAudioObjectUrls[playerKey] = objectUrl;
-
-  player.pause();
-  player.src = objectUrl;
-  player.currentTime = 0;
-  player.load();
 }
 
     let participant = null;
