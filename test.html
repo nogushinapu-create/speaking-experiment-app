@@ -511,6 +511,7 @@ window.addEventListener('beforeunload', event => {
     let audioChunks = [];
     let countdownInterval;
     let testUploadOk = true;
+    let recordingQualityNeedsReview = false;
 
     
 async function inspectRecording(audioBlob, expectedSeconds) {
@@ -587,7 +588,7 @@ async function inspectRecording(audioBlob, expectedSeconds) {
     report.peak = peak;
 
     // 保守的な暫定閾値：無音の疑い
-    if (report.rms < 0.0001) {
+    if (report.rms < 1) {
       report.warnings.push('音声信号が極めて小さい');
     }
 
@@ -766,6 +767,7 @@ document.getElementById(
       document.getElementById('recordingStatus')
   .classList.add('hidden');
       document.getElementById('downloadConfirmed').checked = false;
+      recordingQualityNeedsReview = false;
       setUploadStatus(
   'pending',
   '録音ファイルを処理しています。'
@@ -961,6 +963,9 @@ const inspection = await inspectRecording(
   speakingDuration
 );
 
+recordingQualityNeedsReview =
+  inspection.warnings.length > 0;
+
 if (inspection.warnings.length > 0) {
   console.warn(
     '[Recording quality warning]',
@@ -1108,6 +1113,19 @@ if (inspection.warnings.length > 0) {
 }
     function handleDownloadConfirmation() {
   const checked = document.getElementById('downloadConfirmed').checked;
+  
+      if (checked && recordingQualityNeedsReview) {
+    document.getElementById('downloadConfirmed').checked = false;
+
+    alert(
+      '録音データに確認が必要な点が見つかりました。\n' +
+      '録音ファイルをパソコンに保存し、' +
+      '画面を閉じずに研究者へお知らせください。'
+    );
+
+    return;
+  }
+
       if (!testUploadOk) {
   showUploadFailureMessage(phase);
   document.getElementById('downloadConfirmed').checked = false;
