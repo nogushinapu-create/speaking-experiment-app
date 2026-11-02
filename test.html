@@ -504,7 +504,7 @@ window.addEventListener('beforeunload', event => {
 });
     let phase = '';
     let preparationDuration = 120;
-    const speakingDuration = 5; // テスト用
+    const speakingDuration = 120; 
 
     let mediaRecorder;
     let recordingStream = null;
@@ -711,17 +711,17 @@ if (isDone(statusValue)) {
         taskName = participant.PreTask;
         imageFile = `${taskName}.png`;
         title = 'Pre-test';
-        preparationDuration = 5;
+        preparationDuration = 120;
       } else if (phase === 'post') {
         taskName = participant.PostTask;
         imageFile = `${taskName}.png`;
         title = 'Post-test';
-        preparationDuration = 5;
+        preparationDuration = 120;
       } else if (phase === 'delayed') {
         taskName = 'delayed';
         imageFile = 'stimulus-output.png';
         title = 'Delayed post-test';
-        preparationDuration = 5;
+        preparationDuration = 60;
       }
 
       document.getElementById('loginArea').classList.add('hidden');
