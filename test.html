@@ -512,6 +512,105 @@ window.addEventListener('beforeunload', event => {
     let countdownInterval;
     let testUploadOk = true;
 
+    
+async function inspectRecording(audioBlob, expectedSeconds) {
+  const report = {
+    sizeBytes: audioBlob.size,
+    durationSeconds: null,
+    rms: null,
+    peak: null,
+    warnings: [],
+    inspectionError: null
+  };
+
+  // 1. ファイルサイズの確認
+  if (audioBlob.size < 1000) {
+    report.warnings.push('録音ファイルが極端に小さい');
+  }
+
+  let audioContext = null;
+
+  try {
+    // 2. 音声データのデコード
+    const AudioContextClass =
+      window.AudioContext || window.webkitAudioContext;
+
+    if (!AudioContextClass) {
+      throw new Error('AudioContext is not supported');
+    }
+
+    audioContext = new AudioContextClass();
+
+    const arrayBuffer = await audioBlob.arrayBuffer();
+    const audioBuffer =
+      await audioContext.decodeAudioData(arrayBuffer);
+
+    report.durationSeconds = audioBuffer.duration;
+
+    if (
+      !Number.isFinite(audioBuffer.duration) ||
+      audioBuffer.duration < expectedSeconds - 10
+    ) {
+      report.warnings.push('録音時間が想定より短い');
+    }
+
+    // 3. 音声信号の確認
+    let sumSquares = 0;
+    let peak = 0;
+    let count = 0;
+
+    // 約10ms間隔でサンプリング
+    const step = Math.max(
+      1,
+      Math.floor(audioBuffer.sampleRate / 100)
+    );
+
+    for (let channel = 0;
+         channel < audioBuffer.numberOfChannels;
+         channel++) {
+
+      const samples = audioBuffer.getChannelData(channel);
+
+      for (let i = 0; i < samples.length; i += step) {
+        const value = samples[i];
+
+        sumSquares += value * value;
+        peak = Math.max(peak, Math.abs(value));
+        count++;
+      }
+    }
+
+    report.rms = count > 0
+      ? Math.sqrt(sumSquares / count)
+      : 0;
+
+    report.peak = peak;
+
+    // 保守的な暫定閾値：無音の疑い
+    if (report.rms < 0.0001) {
+      report.warnings.push('音声信号が極めて小さい');
+    }
+
+  } catch (error) {
+    report.inspectionError = error.message;
+    report.warnings.push('音声データを検査できなかった');
+
+  } finally {
+    if (audioContext) {
+      try {
+        await audioContext.close();
+      } catch (error) {
+        console.warn('AudioContext cleanup failed', error);
+      }
+    }
+  }
+
+  console.log('[Recording inspection]', report);
+
+  return report;
+}
+
+
         const testScreenIds = [
       'instructionScreen',
       'preparationScreen',
@@ -856,6 +955,24 @@ stream.getAudioTracks().forEach(track => {
         { type: 'audio/webm' }
       );
 
+      
+const inspection = await inspectRecording(
+  audioBlob,
+  speakingDuration
+);
+
+if (inspection.warnings.length > 0) {
+  console.warn(
+    '[Recording quality warning]',
+    {
+      subjectId: participant.SubjectID,
+      phase,
+      inspection
+    }
+  );
+}
+
+
       const audioUrl =
         URL.createObjectURL(audioBlob);
 
@@ -895,6 +1012,31 @@ stream.getAudioTracks().forEach(track => {
         phase
       );
     };
+
+    
+if (inspection.warnings.length > 0) {
+  const warningMessage =
+    document.createElement('p');
+
+  warningMessage.id = 'recordingQualityWarning';
+  warningMessage.style.color = '#a20f15';
+  warningMessage.style.fontWeight = 'bold';
+
+  warningMessage.textContent =
+    '録音データに確認が必要な点が見つかりました。' +
+    '録音ファイルをパソコンに保存し、' +
+    '画面を閉じずに研究者へお知らせください。';
+
+  const resultScreen =
+    document.getElementById('resultScreen');
+
+  resultScreen.querySelector(
+    '#recordingQualityWarning'
+  )?.remove();
+
+  resultScreen.appendChild(warningMessage);
+}
+
 
     /*
      * 発話画面を表示して即座に録音開始
