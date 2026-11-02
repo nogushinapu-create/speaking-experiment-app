@@ -781,10 +781,57 @@ function startSpeaking() {
     return;
   }
 
+  
+const audioTracks = recordingStream.getAudioTracks();
+
+if (
+  audioTracks.length === 0 ||
+  audioTracks.every(track => track.readyState !== 'live')
+) {
+  streamCleanupAfterError();
+
+  showErrorScreen(
+    'マイクの接続が確認できませんでした。' +
+    '画面を閉じずに研究者へ連絡してください。'
+  );
+  return;
+}
+
+audioTracks.forEach(track => {
+  if (track.muted) {
+    console.warn('[Recording] Microphone is muted at start', {
+      phase,
+      subjectId: participant.SubjectID,
+      trackState: track.readyState
+    });
+  }
+});
+
+
   try {
     audioChunks = [];
 
     const stream = recordingStream;
+
+    
+stream.getAudioTracks().forEach(track => {
+  track.addEventListener('mute', () => {
+    console.warn('[Recording] Audio track muted', {
+      phase,
+      subjectId: participant.SubjectID,
+      time: new Date().toISOString()
+    });
+  });
+
+  track.addEventListener('ended', () => {
+    console.error('[Recording] Audio track ended unexpectedly', {
+      phase,
+      subjectId: participant.SubjectID,
+      time: new Date().toISOString()
+    });
+  });
+});
+
 
     mediaRecorder =
       new MediaRecorder(stream);
