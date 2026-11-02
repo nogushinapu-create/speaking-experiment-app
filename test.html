@@ -504,7 +504,7 @@ window.addEventListener('beforeunload', event => {
 });
     let phase = '';
     let preparationDuration = 120;
-    const speakingDuration = 120;
+    const speakingDuration = 5; // テスト用
 
     let mediaRecorder;
     let recordingStream = null;
@@ -549,7 +549,7 @@ async function inspectRecording(audioBlob, expectedSeconds) {
 
     if (
       !Number.isFinite(audioBuffer.duration) ||
-      audioBuffer.duration < expectedSeconds - 10
+      audioBuffer.duration < expectedSeconds * 0.9
     ) {
       report.warnings.push('録音時間が想定より短い');
     }
@@ -710,17 +710,17 @@ if (isDone(statusValue)) {
         taskName = participant.PreTask;
         imageFile = `${taskName}.png`;
         title = 'Pre-test';
-        preparationDuration = 120;
+        preparationDuration = 5;
       } else if (phase === 'post') {
         taskName = participant.PostTask;
         imageFile = `${taskName}.png`;
         title = 'Post-test';
-        preparationDuration = 120;
+        preparationDuration = 5;
       } else if (phase === 'delayed') {
         taskName = 'delayed';
         imageFile = 'stimulus-output.png';
         title = 'Delayed post-test';
-        preparationDuration = 60;
+        preparationDuration = 5;
       }
 
       document.getElementById('loginArea').classList.add('hidden');
@@ -1011,7 +1011,7 @@ if (inspection.warnings.length > 0) {
         testUploadOk,
         phase
       );
-    };
+    
 
     
 if (inspection.warnings.length > 0) {
@@ -1036,7 +1036,7 @@ if (inspection.warnings.length > 0) {
 
   resultScreen.appendChild(warningMessage);
 }
-
+};
 
     /*
      * 発話画面を表示して即座に録音開始
