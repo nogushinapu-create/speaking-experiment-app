@@ -588,7 +588,7 @@ async function inspectRecording(audioBlob, expectedSeconds) {
     report.peak = peak;
 
     // 保守的な暫定閾値：無音の疑い
-    if (report.rms < 1) {
+    if (report.rms < 0.0001) {
       report.warnings.push('音声信号が極めて小さい');
     }
 
