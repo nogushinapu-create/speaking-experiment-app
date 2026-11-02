@@ -1166,22 +1166,28 @@ async function uploadAudioToDrive(audioBlob, metadata) {
       base64Audio: base64Audio
     };
 
-    await fetch(API_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: {
-        'Content-Type': 'text/plain'
-      },
-      body: JSON.stringify(payload)
-    });
+    
+const response = await fetch(API_URL, {
+  method: 'POST',
+  mode: 'no-cors',
+  headers: {
+    'Content-Type': 'text/plain'
+  },
+  body: JSON.stringify(payload)
+});
 
-    return true;
+console.log('[Upload request]', {
+  subjectId: participant.SubjectID,
+  phase: metadata.phase,
+  fileName: metadata.fileName,
+  sizeBytes: audioBlob.size,
+  responseType: response.type,
+  timestamp: new Date().toISOString()
+});
 
-  } catch (error) {
-    console.error('Upload failed:', error);
-    return false;
-  }
-}
+// no-corsでは保存成功を確認できない
+return true;
+
 
 function blobToBase64(blob) {
   return new Promise((resolve, reject) => {
@@ -1237,7 +1243,7 @@ function showUploadResultMessage(uploadOk, label) {
   if (uploadOk) {
     setUploadStatus(
       'success',
-      'Google Driveへの送信処理が完了しました。続けて、録音ファイルをご自身のパソコンにも保存してください。'
+      ''録音ファイルの送信処理が終了しました。保存状況は研究者も確認します。録音ファイルをご自身のパソコンにも必ず保存してください。''
     );
   } else {
     showUploadFailureMessage(label);
