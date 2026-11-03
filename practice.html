@@ -839,6 +839,41 @@ async function loadModelAudio(
 
     let participant = null;
 
+    
+function monitorRecordingStream(stream, label) {
+  const track = stream?.getAudioTracks()[0];
+
+  if (!track) {
+    throw new Error(`${label}: 音声トラックがありません。`);
+  }
+
+  console.log('[Microphone status]', {
+    label,
+    readyState: track.readyState,
+    enabled: track.enabled,
+    muted: track.muted
+  });
+
+  if (track.readyState !== 'live' || !track.enabled) {
+    throw new Error(
+      `${label}: マイクが録音可能な状態ではありません。`
+    );
+  }
+
+  track.addEventListener('mute', () => {
+    console.warn('[Microphone muted]', label);
+  });
+
+  track.addEventListener('unmute', () => {
+    console.log('[Microphone unmuted]', label);
+  });
+
+  track.addEventListener('ended', () => {
+    console.error('[Microphone disconnected]', label);
+  });
+}
+
+
     /*
  * 実験中のページ離脱防止
  */
@@ -1429,7 +1464,7 @@ function startOutputSpeaking() {
 
   try {
     const stream = outputRecordingStream;
-
+    monitorRecordingStream(stream, `Output Trial ${outputTrial}`);
     outputAudioChunks = [];
     outputMediaRecorder =
       new MediaRecorder(stream);
@@ -1890,7 +1925,7 @@ function startInputSpeaking() {
 
   try {
     const stream = inputRecordingStream;
-
+    monitorRecordingStream(stream, 'Input final');
     inputAudioChunks = [];
     inputMediaRecorder =
       new MediaRecorder(stream);
@@ -2209,7 +2244,7 @@ function startIOSpeaking() {
 
   try {
     const stream = ioRecordingStream;
-
+    monitorRecordingStream(stream, `Input+Output Trial ${ioTrial}`);
     ioAudioChunks = [];
     ioMediaRecorder =
       new MediaRecorder(stream);
