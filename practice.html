@@ -874,6 +874,106 @@ function monitorRecordingStream(stream, label) {
 }
 
 
+async function inspectRecording(audioBlob, expectedSeconds) {
+  const report = {
+    sizeBytes: audioBlob.size,
+    durationSeconds: null,
+    rms: null,
+    peak: null,
+    warnings: [],
+    inspectionError: null
+  };
+
+  if (audioBlob.size < 1000) {
+    report.warnings.push('録音ファイルが極端に小さい');
+  }
+
+  let audioContext = null;
+
+  try {
+    const AudioContextClass =
+      window.AudioContext || window.webkitAudioContext;
+
+    if (!AudioContextClass) {
+      throw new Error('AudioContext is not supported');
+    }
+
+    audioContext = new AudioContextClass();
+
+    const arrayBuffer = await audioBlob.arrayBuffer();
+    const audioBuffer =
+      await audioContext.decodeAudioData(arrayBuffer);
+
+    report.durationSeconds = audioBuffer.duration;
+
+    if (
+      !Number.isFinite(audioBuffer.duration) ||
+      audioBuffer.duration < expectedSeconds * 0.9
+    ) {
+      report.warnings.push('録音時間が想定より短い');
+    }
+
+    let sumSquares = 0;
+    let peak = 0;
+    let count = 0;
+
+    const step = Math.max(
+      1,
+      Math.floor(audioBuffer.sampleRate / 100)
+    );
+
+    for (
+      let channel = 0;
+      channel < audioBuffer.numberOfChannels;
+      channel++
+    ) {
+      const samples =
+        audioBuffer.getChannelData(channel);
+
+      for (let i = 0; i < samples.length; i += step) {
+        const value = samples[i];
+
+        sumSquares += value * value;
+        peak = Math.max(peak, Math.abs(value));
+        count++;
+      }
+    }
+
+    report.rms = count > 0
+      ? Math.sqrt(sumSquares / count)
+      : 0;
+
+    report.peak = peak;
+
+    if (report.rms < 0.0001) {
+      report.warnings.push('音声信号が極めて小さい');
+    }
+
+  } catch (error) {
+    report.inspectionError = error.message;
+    report.warnings.push(
+      '音声データを検査できなかった'
+    );
+
+  } finally {
+    if (audioContext) {
+      try {
+        await audioContext.close();
+      } catch (error) {
+        console.warn(
+          'AudioContext cleanup failed',
+          error
+        );
+      }
+    }
+  }
+
+  console.log('[Recording inspection]', report);
+
+  return report;
+}
+
+
     /*
  * 実験中のページ離脱防止
  */
@@ -1489,6 +1589,19 @@ function startOutputSpeaking() {
         { type: 'audio/webm' }
       );
 
+      const inspection = await inspectRecording(
+        audioBlob,
+        duration
+      );
+
+      if (inspection.warnings.length > 0) {
+        console.warn('[Output recording warning]', {
+          subjectId: participant.SubjectID,
+          trial: outputTrial,
+          inspection
+        });
+      }
+
       const audioUrl =
         URL.createObjectURL(audioBlob);
 
@@ -1950,6 +2063,18 @@ function startInputSpeaking() {
         { type: 'audio/webm' }
       );
 
+      const inspection = await inspectRecording(
+        audioBlob,
+        duration
+      );
+
+      if (inspection.warnings.length > 0) {
+        console.warn('[Input recording warning]', {
+          subjectId: participant.SubjectID,
+          inspection
+        });
+      }
+      
       const audioUrl =
         URL.createObjectURL(audioBlob);
 
@@ -2262,6 +2387,19 @@ function startIOSpeaking() {
         ioAudioChunks,
         { type: 'audio/webm' }
       );
+
+      const inspection = await inspectRecording(
+        audioBlob,
+        duration
+      );
+      
+      if (inspection.warnings.length > 0) {
+        console.warn('[Input+Output recording warning]', {
+          subjectId: participant.SubjectID,
+          trial: ioTrial,
+          inspection
+        });
+      }
 
       const audioUrl =
         URL.createObjectURL(audioBlob);
